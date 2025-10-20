@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Douyin Heat Analyzer",
+  "description": "自动分析抖音视频热度，收集互动数据并发现热门内容",
+  "version": "0.1.0",
+  "action": {
+    "default_title": "Douyin Heat Analyzer",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.douyin.com/*",
+    "https://*.douyin.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.douyin.com/*",
+        "https://*.douyin.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
