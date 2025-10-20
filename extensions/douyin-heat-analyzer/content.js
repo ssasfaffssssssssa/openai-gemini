@@ -154,7 +154,8 @@
       padding: '4px 6px',
       borderRadius: '6px',
       zIndex: 2147483647,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+      pointerEvents: 'none'
     });
     const root = card.style ? card : (card.parentElement || document.body);
     if (root && root.style && getComputedStyle(root).position === 'static') {
