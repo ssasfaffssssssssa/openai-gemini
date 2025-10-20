@@ -1,0 +1,23 @@
+* { box-sizing: border-box; }
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Noto Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', sans-serif; margin:0; padding:12px; width: 920px; color: #111; }
+header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+h1 { font-size: 18px; margin: 0; }
+.actions { display:flex; gap:8px; align-items:center; }
+button { border:1px solid #ccc; background:#fff; border-radius:6px; padding:6px 10px; cursor:pointer; }
+button:hover { background:#f6f6f6; }
+button.danger { color:#b00020; border-color:#f2c0c0; }
+
+#stats { display:flex; gap:12px; margin:12px 0; }
+.stat { background:#fafafa; border:1px solid #eee; padding:10px; border-radius:8px; min-width:120px; text-align:center; }
+.stat .num { font-size:18px; font-weight:700; }
+.stat .label { color:#666; font-size:12px; margin-top:2px; }
+
+#table { width:100%; border-collapse: collapse; }
+#table th, #table td { border-bottom:1px solid #eee; padding:6px 8px; font-size:12px; vertical-align: top; }
+#table thead th { position: sticky; top: 0; background: #fff; z-index: 1; }
+#table img { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border:1px solid #eee; }
+#table a { color:#0b57d0; text-decoration:none; }
+#table a:hover { text-decoration:underline; }
+
+.switch { display:flex; align-items:center; gap:6px; }
+footer { margin-top: 8px; color:#666; }

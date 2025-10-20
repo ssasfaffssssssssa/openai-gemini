@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Douyin Heat Analyzer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <h1>Douyin Heat Analyzer</h1>
+    <div class="actions">
+      <label class="switch">
+        <input id="toggle-auto" type="checkbox" />
+        <span>自动采集</span>
+      </label>
+      <button id="btn-scan">扫描当前页面</button>
+      <button id="btn-export">导出 CSV</button>
+      <button id="btn-clear" class="danger">清空数据</button>
+    </div>
+  </header>
+
+  <section id="stats">
+    <div class="stat"><div class="num" id="total-videos">0</div><div class="label">视频数</div></div>
+    <div class="stat"><div class="num" id="avg-heat">0</div><div class="label">平均热度</div></div>
+    <div class="stat"><div class="num" id="top-heat">0</div><div class="label">最高热度</div></div>
+  </section>
+
+  <section>
+    <table id="table">
+      <thead>
+        <tr>
+          <th>封面</th>
+          <th>标题</th>
+          <th>作者</th>
+          <th>点赞</th>
+          <th>评论</th>
+          <th>分享</th>
+          <th>收藏</th>
+          <th>播放</th>
+          <th>热度</th>
+          <th>发布时间</th>
+          <th>链接</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <footer>
+    <small>提示：热度=加权互动量/时间衰减，仅供参考。</small>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

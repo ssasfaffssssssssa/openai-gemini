@@ -184,3 +184,27 @@ Implemented via [`inlineData`](https://ai.google.dev/api/caching#Part).
 - [ ] `completions`
 - [x] `embeddings`
 - [x] `models`
+
+---
+
+## Chrome Extension: Douyin Heat Analyzer
+
+This repository also includes an optional Chrome extension that automatically analyzes Douyin (抖音) video heat, collects interaction data, and helps discover popular content.
+
+Location: `extensions/douyin-heat-analyzer`
+
+Features:
+- Auto-collect interaction data (likes, comments, shares, collects, plays) from Douyin web pages
+- Compute a heat score with time decay to surface trending content
+- Inline badge overlay on video cards
+- Popup dashboard with sorting, quick stats, CSV export, manual scan, and clear data
+
+Install (Developer Mode):
+1. Open Chrome and navigate to `chrome://extensions/`
+2. Enable "Developer mode" (top right)
+3. Click "Load unpacked" and select the `extensions/douyin-heat-analyzer` folder
+4. Visit https://www.douyin.com and start browsing — the extension will collect data automatically
+
+Notes:
+- Manifest V3, permissions are limited to Douyin domains and storage
+- The Douyin DOM is highly dynamic; the extractor uses heuristics and may not capture every metric on every page. You can use the popup's "扫描当前页面" to trigger a manual rescan.
