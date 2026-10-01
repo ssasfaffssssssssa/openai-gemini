@@ -196,8 +196,8 @@ async function setup() {
   scene.add(clock.group);
   lovers = buildLovers();
   scene.add(lovers.group);
-  heroT = new WriteOn(eq.hero.t, 360, new THREE.Color(0.95, 0.92, 0.88), 1.5);
-  heroS = new WriteOn(eq.hero.entropy, 220, new THREE.Color(1.5, 1.0, 0.55), 0.9);
+  heroT = new WriteOn(eq.hero.t, 360, new THREE.Color(1.5, 1.25, 1.0), 1.05, 0.3);
+  heroS = new WriteOn(eq.hero.entropy, 220, new THREE.Color(1.5, 1.0, 0.55), 0.72);
   heroFlip = new WriteOn(eq.hero.flip, 260, new THREE.Color(1.2, 1.35, 1.7), 0.9);
   heroFinal = new WriteOn(eq.hero.final, 260, new THREE.Color(1.5, 1.3, 1.0), 0.62);
   for (const h of [heroT, heroS, heroFlip, heroFinal]) scene.add(h.mesh);
@@ -273,7 +273,7 @@ async function renderFrame(t) {
   // hero: entropy
   {
     const p = smooth(20.7, 22.2, tau);
-    const base = P.CLOCK.clone().add(clockBasis.fwd.clone().multiplyScalar(1.2)).add(clockBasis.up.clone().multiplyScalar(0.4));
+    const base = P.CLOCK.clone().add(clockBasis.fwd.clone().multiplyScalar(1.2)).add(clockBasis.up.clone().multiplyScalar(0.5)).add(clockBasis.right.clone().multiplyScalar(-1.7));
     const s = clamp((tau - 23.0) / 3.0);
     const pos = s > 0 ? base.clone().lerp(spiralIn(base, s, 2.0, 1.4), smooth(0, 0.1, s)) : base;
     faceCamera(heroS.mesh, pos);

@@ -101,7 +101,7 @@ void main() {
   float swallow = 1.0;
   if (tau > d0) {
     float since = tau - d0;
-    vec3 kdir = normalize(cRight * (lp.x - crack.x) + cUp * (lp.y - crack.y) + cFwd * (aSeed.z - 0.3) * 1.5 + 1e-4);
+    vec3 kdir = normalize(cRight * (lp.x - crack.x) + cUp * (lp.y - crack.y) + cFwd * (aSeed.z - 0.5) * 0.5 + 1e-4);
     vec3 kick = kdir * (1.2 + 1.6 * aSeed.y) * (1.0 - exp(-since * 2.5)) * (1.0 - s);
     vec3 h0 = home + kick;
     float R0 = length(h0.xz);
@@ -123,7 +123,7 @@ void main() {
   vec3 hot = vec3(1.0, 0.55, 0.22);
   vCol = mix(cool, hot, heat) * (0.42 + 0.55 * heat + uBeat * (kind > 2.5 ? 0.8 : 0.12));
   float appear = smoothstep(0.0, 0.25, fs) ;
-  vAlpha = appear * swallow * vis * (0.35 + 0.4 * aSeed.z) * clamp(2.4 / size, 0.25, 1.0);
+  vAlpha = appear * swallow * vis * (0.35 + 0.4 * aSeed.z) * clamp(2.4 / size, 0.25, 1.0) * smoothstep(4.0, 9.0, -mv.z) * (1.0 - 0.45 * heat);
 }`;
 
 const FRAG = /* glsl */ `

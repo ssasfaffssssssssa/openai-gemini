@@ -4,7 +4,8 @@ import { svgImage } from './river.js';
 // Hand-written reveal of a MathJax equation: each glyph outline is traced with a
 // growing stroke (pathLength=1 dash), then its fill fades in. Drawn to a canvas texture.
 export class WriteOn {
-  constructor(entry, pxH = 300, color = new THREE.Color(1, 1, 1), worldH = 1) {
+  constructor(entry, pxH = 300, color = new THREE.Color(1, 1, 1), worldH = 1, maxFill = 1) {
+    this.maxFill = maxFill;
     this.vb = entry.vb;
     this.pxH = pxH;
     this.pxW = Math.round(pxH * this.vb[2] / this.vb[3]);
@@ -37,7 +38,7 @@ export class WriteOn {
     const svg = this.tpl.replace(/<(path|rect) data-k="(\d+)"/g, (m, tag, ks) => {
       const k = +ks;
       const pk = Math.min(1, Math.max(0, q * (N + 1.2) - k));
-      const fill = Math.min(1, Math.max(0, (pk - 0.55) / 0.45));
+      const fill = Math.min(1, Math.max(0, (pk - 0.55) / 0.45)) * this.maxFill;
       if (tag === 'rect') return `<rect fill-opacity="${pk}"`;
       return `<path stroke="#ffffff" stroke-width="${sw}" stroke-linecap="round" pathLength="1" stroke-dasharray="${pk.toFixed(4)} 2" stroke-opacity="${(pk > 0 ? 1 - 0.65 * fill : 0).toFixed(3)}" fill-opacity="${fill.toFixed(3)}"`;
     });
