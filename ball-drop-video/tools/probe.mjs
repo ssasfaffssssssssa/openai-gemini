@@ -1,0 +1,10 @@
+import { chromium } from 'playwright-core';
+import path from 'path'; import { serve } from './server.mjs';
+const root = path.resolve(new URL('..', import.meta.url).pathname);
+const srv = await serve(root, 8125);
+const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const page = await browser.newPage({ viewport: { width: 540, height: 960 } });
+await page.goto(`http://localhost:8125/bench/bench.html`);
+await page.waitForFunction('window.ready');
+console.log(await page.evaluate(() => { const gl = document.querySelector('canvas').getContext('webgl2'); return gl.getSupportedExtensions().join(' '); }));
+await browser.close(); srv.close();
