@@ -50,7 +50,7 @@ async function worker(id, f0, f1) {
     : await chromium.launch({ executablePath: CHROME, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-web-security'] });
   const page = await browser.newPage({ viewport: { width: Math.min(W, 1080), height: Math.min(H, 1920) } });
   page.on('pageerror', (e) => console.log(`[w${id}] pageerror`, e.message));
-  await page.goto(`http://localhost:${port}/src/index.html?w=${W}&h=${H}&bh=${BH}`);
+  await page.goto(`http://localhost:${port}/src/index.html?w=${W}&h=${H}&bh=${BH}${args.msaa ? `&msaa=${args.msaa}` : ''}`);
   await page.waitForFunction('window.ready || window.setupError', null, { timeout: 180000 });
   const err = await page.evaluate('window.setupError');
   if (err) throw new Error(err);
