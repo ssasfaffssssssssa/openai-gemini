@@ -97,7 +97,7 @@ const finalPass = fsPass(/* glsl */ `
   tMain: { value: mainRT.texture }, tStreak: { value: streakB.texture }, tPrev: { value: frameB.texture },
   exposure: { value: 1 }, streakAmt: { value: 0.16 }, vig: { value: 0.55 }, grain: { value: 0.02 }, ca: { value: 0.0018 }, glitch: { value: 0 },
   freeze: { value: 0 }, rewind: { value: 0 }, trail: { value: 0 }, fade: { value: 0 }, flash: { value: 0 }, time: { value: 0 }, warm: { value: 0 },
-  res: { value: new THREE.Vector2(W, H) }, shock: { value: new THREE.Vector4(0.5, 0.5, 0, 0) }, lbox: { value: 0.5 - BAR_PX / H },
+  res: { value: new THREE.Vector2(W, H) }, shock: { value: new THREE.Vector4(0.5, 0.5, 0, 0) }, lbox: { value: qs.get('nolb') ? 0.6 : 0.5 - BAR_PX / H },
 });
 const copyPass = fsPass('uniform sampler2D t; varying vec2 vUv; void main(){ gl_FragColor = vec4(texture2D(t, vUv).rgb, 1.0); }', { t: { value: null } });
 
@@ -384,7 +384,7 @@ async function renderFrame(tReal) {
   updateCaptions(t, TR);
   updateTimecode(t, tau, TR, zipEnv > 0.5);
   renderer.setRenderTarget(null);
-  renderer.render(hud, hudCam);
+  if (!qs.get('nohud')) renderer.render(hud, hudCam);
   return true;
 }
 window.renderFrame = renderFrame;

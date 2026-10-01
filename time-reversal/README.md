@@ -1,6 +1,6 @@
 # 《t → −t｜逆时公式》
 
-A 51-second vertical (1080×1920) motion design piece built entirely with JavaScript and three.js, inspired by the image of a black hole swallowing a river of physics equations.
+A 53.5-second widescreen (1920×1080, 2.39:1 letterbox) motion design piece built entirely with JavaScript and three.js, inspired by the image of a black hole swallowing a river of physics equations.
 
 **Concept:** halfway through, time in the film actually runs backwards. Every visual is a pure function of scene time `tau`, and `src/timeline.js` maps real time to `tau` (forward → freeze → rewind → forward). The rewind is not a reversed video: the same functions are evaluated with decreasing `tau`. The soundtrack in that section is the act 2–3 mix, time-compressed by the same factor and played backwards, so every reversed sound lands on its reversed visual event.
 
@@ -14,11 +14,17 @@ A 51-second vertical (1080×1920) motion design piece built entirely with JavaSc
 | Post | Bloom, anamorphic streaks, ACES, chromatic aberration, freeze glitch (slit-scan and RGB split), rewind echo trails, reunion shockwave, grain, vignette |
 | Sound | `music/build.py`: FluidSynth score (organ ostinato, choir, strings, celesta motif), numpy SFX, phase-vocoder rewind |
 
+## Final cut (with the user's hook audio)
+- The opening uses the provided hook clip untouched. It holds a female voice saying 「我会找到逆转时间的公式，然后回到你身边」 over a G-minor BGM at 119.05 bpm (Gm–E♭–F–Gsus).
+- Speech recognition (sherpa-onnx SenseVoice) timed each character. The subtitles appear character by character, the picture flash-forwards during the first sentence and tape-rewinds to t = 0 in the pause.
+- The river reveal lands on bar 4 of the BGM, right after the line ends. `music/final.py` transposes the original score to G minor and follows the BGM's chord cycle, so both play together before the BGM dissolves into the black hole. Its bars 5–7 return under the finale.
+- `tools/cover.py` builds the cover from a clean frame (`?nohud=1&nolb=1`).
+
 ## Build
 ```sh
 npm install && pip install mido numpy scipy pillow   # plus fluidsynth, fluid-soundfont-gm, ffmpeg, fonts-noto-cjk, fonts-cmu
 node tools/typeset.mjs
-python3 music/build.py
+python3 music/final.py          # needs build/audio_in/user.wav (the hook clip)
 node tools/stills.mjs 540 960 10 24 47.2            # preview stills
-node render.mjs --w 1080 --h 1920 --fps 30 --workers 3 --out build/t-minus-t.mp4
+node render.mjs --w 1920 --h 1080 --fps 30 --workers 3 --out build/t-minus-t.mp4
 ```
