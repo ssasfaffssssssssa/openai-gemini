@@ -180,7 +180,7 @@ const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.6, 0.5, 1.05);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 const finalPass = new ShaderPass({
-  uniforms: { tDiffuse: { value: null }, time: { value: 0 }, fade: { value: 0 }, flashAmt: { value: 0 }, vig: { value: 0.35 }, grain: { value: 0.035 }, ca: { value: 0.0015 }, res: { value: new THREE.Vector2(W, H) } },
+  uniforms: { tDiffuse: { value: null }, time: { value: 0 }, fade: { value: 0 }, flashAmt: { value: 0 }, vig: { value: 0.35 }, grain: { value: 0.012 }, ca: { value: 0.0015 }, res: { value: new THREE.Vector2(W, H) } },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
   fragmentShader: `uniform sampler2D tDiffuse; uniform float time, fade, flashAmt, vig, grain, ca; uniform vec2 res; varying vec2 vUv;
     float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)) + time*13.17)*43758.5453); }
