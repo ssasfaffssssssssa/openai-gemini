@@ -24,7 +24,7 @@ const camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 400);
 const scene = new THREE.Scene();
 
 // ---------------------------------------------------------------- render targets & passes
-const mainRT = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 });
+const mainRT = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: +(qs.get('msaa') || 0) });
 const bh = createBlackHole(renderer, Math.round(W * BH_SCALE), Math.round(H * BH_SCALE));
 const comp = createBHComposite(bh.rt.texture);
 scene.add(comp.quad);
@@ -226,7 +226,11 @@ function faceCamera(mesh, pos) {
   mesh.quaternion.copy(camera.quaternion);
 }
 
-async function renderFrame(t) {
+// The visual timeline is authored at 120 bpm; the BGM runs at 119.05 bpm, so the whole
+// picture is stretched by TS to land every beat and bar on the music.
+export const TS = 0.2520 / 0.25;
+async function renderFrame(tReal) {
+  const t = tReal / TS;
   const tau = tauAt(t);
   const md = mode(t);
   const c = cameraAt(t);
@@ -349,5 +353,5 @@ window.readFrame = () => {
   gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, buf);
   return buf;
 };
-window.getDuration = () => T.END;
+window.getDuration = () => T.END * TS;
 setup().catch((e) => { console.error('setup failed', e.stack || e); window.setupError = String(e.stack || e); });

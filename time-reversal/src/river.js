@@ -87,6 +87,7 @@ void main() {
   float vis;
   vec3 lp = lensP(wp, vis);
   gl_Position = projectionMatrix * viewMatrix * vec4(lp, 1.0);
+  if (uSign < 0.0 && vis < 0.001) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
   vUv = mix(aRect.xy, aRect.zw, uv);
   float fadeIn = smoothstep(0.0, 0.07, u);
   float swallow = smoothstep(1.95, 2.9, R);

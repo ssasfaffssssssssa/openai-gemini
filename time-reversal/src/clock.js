@@ -117,6 +117,7 @@ void main() {
   vec3 lp3 = lensP(p, vis);
   vec4 mv = viewMatrix * vec4(lp3, 1.0);
   gl_Position = projectionMatrix * mv;
+  if (uSign < 0.0 && vis < 0.001) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
   float size = (0.9 + aLocal.w) * pxScale / -mv.z;
   gl_PointSize = clamp(size, 1.0, 6.0);
   vec3 cool = kind > 2.5 ? vec3(1.0, 0.55, 0.62) : vec3(1.0, 0.92, 0.8);
