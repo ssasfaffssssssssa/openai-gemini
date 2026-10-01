@@ -9,7 +9,7 @@ const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromi
 const page = await browser.newPage({ viewport: { width: +w, height: +h } });
 page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') console.log('page:', m.text()); });
 page.on('pageerror', (e) => console.log('pageerror:', e.message));
-await page.goto(`http://localhost:8124/src/index.html?w=${w}&h=${h}`);
+await page.goto(`http://localhost:8124/src/index.html?w=${w}&h=${h}${process.env.QS || ''}`);
 await page.waitForFunction('window.ready || window.setupError', null, { timeout: 120000 });
 const err = await page.evaluate('window.setupError'); if (err) { console.log(err); process.exit(1); }
 fs.mkdirSync(path.join(root, 'build/stills'), { recursive: true });

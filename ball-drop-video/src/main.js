@@ -719,6 +719,7 @@ function renderFrame(t) {
 
   updateCaptions(t);
   composer.render();
+  if (qs.get('nohud')) return;
   renderer.autoClear = false;
   renderer.render(hud, hudCam);
   renderer.autoClear = true;
