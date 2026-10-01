@@ -1,9 +1,10 @@
+import { fileURLToPath } from 'url';
 // Render selected timestamps to PNG for inspection: node tools/stills.mjs 540 960 1.0 5.5 ...
 import { chromium } from 'playwright-core';
 import fs from 'fs'; import { execSync } from 'child_process'; import path from 'path';
 import { serve } from './server.mjs';
 const [w, h, ...ts] = process.argv.slice(2);
-const root = path.resolve(new URL('..', import.meta.url).pathname);
+const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const srv = await serve(root, 8124);
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: +w, height: +h } });

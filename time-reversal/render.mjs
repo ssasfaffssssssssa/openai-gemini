@@ -6,6 +6,7 @@ import { spawn, execFileSync } from 'child_process';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { serve } from './tools/server.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, arr) => (v.startsWith('--') ? a.concat([[v.slice(2), arr[i + 1] && !arr[i + 1].startsWith('--') ? arr[i + 1] : true]]) : a), []));
@@ -14,7 +15,7 @@ const WORKERS = +(args.workers || 1);
 const OUT = args.out || 'build/t-minus-t.mp4';
 const BH = args.bh || '0.6';
 const CRF = args.crf || '17';
-const ROOT = path.dirname(new URL(import.meta.url).pathname);
+const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const CHROME = process.env.CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
 const DURATION = (0.106 + 4 * 2.016) + 45 * (0.2520 / 0.25);   // matches END_REAL in src/main.js
@@ -81,7 +82,7 @@ async function worker(id, f0, f1) {
 const per = Math.ceil(total / WORKERS);
 const segs = await Promise.all(Array.from({ length: WORKERS }, (_, i) => worker(i, i * per, Math.min(total, (i + 1) * per))));
 const list = path.join(ROOT, 'build/segments/list.txt');
-fs.writeFileSync(list, segs.map((s) => `file '${s}'`).join('\n'));
+fs.writeFileSync(list, segs.map((s) => `file '${s.replace(/\\/g, '/')}'`).join('\n'));
 execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', list, '-i', path.join(ROOT, 'build/music.wav'),
   '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', path.join(ROOT, OUT)]);
 console.log(`done: ${OUT} (${total} frames, ${((Date.now() - startAt) / 60000).toFixed(1)} min)`);

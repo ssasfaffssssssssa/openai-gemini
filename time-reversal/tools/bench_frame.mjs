@@ -1,5 +1,6 @@
+import { fileURLToPath } from 'url';
 import { chromium } from 'playwright-core'; import path from 'path'; import { serve } from './server.mjs';
-const root = path.resolve(new URL('..', import.meta.url).pathname);
+const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const srv = await serve(root, 8140);
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const p = await b.newPage({ viewport: { width: 1080, height: 1920 } });

@@ -104,7 +104,7 @@ const copyPass = fsPass('uniform sampler2D t; varying vec2 vUv; void main(){ gl_
 // ---------------------------------------------------------------- HUD (captions + timecode)
 const hud = new THREE.Scene();
 const hudCam = new THREE.OrthographicCamera(-W / 2, W / 2, H / 2, -H / 2, -10, 10);
-const SERIF = '"Noto Serif CJK SC", "Noto Serif CJK", serif';
+const SERIF = '"Noto Serif CJK SC", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif';
 function charMesh(ch, size, color, glow, weight = 600) {
   const c = document.createElement('canvas');
   const g = c.getContext('2d');
@@ -184,7 +184,7 @@ function updateTimecode(t, tau, TR, zip) {
   g.clearRect(0, 0, 560, 90);
   const md = zip ? 'rewind' : mode(t);
   g.fillStyle = 'rgba(240,236,228,0.85)';
-  g.font = '34px "CMU Typewriter Text", "DejaVu Sans Mono", monospace';
+  g.font = '34px "CMU Typewriter Text", "DejaVu Sans Mono", Consolas, Menlo, monospace';
   g.textBaseline = 'middle';
   g.fillText(`t = ${tau >= 0 ? '+' : '−'}${Math.abs(tau).toFixed(2).padStart(5, '0')} s`, 70, 45);
   // transport icon

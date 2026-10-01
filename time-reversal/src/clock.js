@@ -30,7 +30,7 @@ function sampleClock() {
   const romans = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
   romans.forEach((txt, h) => {
     g.clearRect(0, 0, 256, 256);
-    g.fillStyle = '#fff'; g.font = '600 120px "CMU Serif", serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#fff'; g.font = '600 120px "CMU Serif", "Latin Modern Roman", "Times New Roman", serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(txt, 128, 128);
     const d = g.getImageData(0, 0, 256, 256).data;
     const on = [];
