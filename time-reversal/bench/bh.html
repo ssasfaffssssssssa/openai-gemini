@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"../node_modules/three/build/three.module.js","three/addons/":"../node_modules/three/examples/jsm/"}}</script>
+</head><body style="margin:0;background:#000">
+<script type="module">
+import * as THREE from 'three';
+import { createBlackHole } from '../src/blackhole.js';
+const qs = new URLSearchParams(location.search);
+const W = +qs.get('w'), H = +qs.get('h');
+const r = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
+r.setPixelRatio(1); r.setSize(W, H); document.body.appendChild(r.domElement);
+const bh = createBlackHole(r, W, H);
+const cam = new THREE.PerspectiveCamera(50, W / H, 0.1, 1000);
+cam.position.set(+qs.get('cx') || 6, +qs.get('cy') || 2.6, +qs.get('cz') || 30); cam.lookAt(+qs.get('lx') || 6, +qs.get('ly') || 0.4, 0);
+// show
+const show = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({ uniforms: { t: { value: bh.rt.texture } }, vertexShader: 'varying vec2 vUv; void main(){vUv=uv; gl_Position=vec4(position.xy,0.,1.);}', fragmentShader: 'uniform sampler2D t; varying vec2 vUv; void main(){ vec3 c = texture2D(t,vUv).rgb; c = clamp((c*(2.51*c+0.03))/(c*(2.43*c+0.59)+0.14),0.,1.); gl_FragColor=vec4(pow(c,vec3(1.0/2.2)),1.);}' }));
+const sc = new THREE.Scene(); sc.add(show); show.frustumCulled = false;
+const oc = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+window.go = (n) => { const gl = r.getContext(); const px = new Uint8Array(4); const t0 = performance.now(); for (let i = 0; i < n; i++) { bh.render(cam, i * 0.1); r.render(sc, oc); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); } return (performance.now() - t0) / n; };
+window.ready = true;
+</script></body></html>
