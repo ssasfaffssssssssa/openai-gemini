@@ -76,6 +76,36 @@ def bgm_span(t0, t1, c_at_t0):
     return out
 
 
+INST_LO = C0 + 4 * BAR      # bars 4-7 of the clip have no vocal
+INST_LOOP = 4 * BAR
+B_START = C0 + 5 * BAR      # section B (cycle position 1) starts here
+
+
+def bgm_inst(t0, t1, c_at_t0):
+    """Instrumental-only bed: loop bars 4-7 (same 4-bar harmonic cycle as the vocal bars)."""
+    n = int(round((t1 - t0) * SR))
+    out = np.zeros((n, 2), np.float32)
+    pos = 0
+    c = c_at_t0
+    xf = int(0.015 * SR)
+    first = True
+    while pos < n:
+        c = INST_LO + (c - INST_LO) % INST_LOOP
+        start = int(round(c * SR))
+        stop = int(round((INST_LO + INST_LOOP) * SR))
+        piece = clip[start:stop].copy()
+        take = min(len(piece), n - pos)
+        piece = piece[:take]
+        if not first and take > xf:
+            prev_tail = clip[stop:stop + xf]
+            piece[:xf] = piece[:xf] * np.sin(np.linspace(0, np.pi / 2, xf))[:, None] + prev_tail * np.cos(np.linspace(0, np.pi / 2, xf))[:, None]
+        out[pos:pos + take] = piece
+        pos += take
+        c = INST_LO
+        first = False
+    return out
+
+
 def bp(x, lo, hi, order=2):
     b, a = signal.butter(order, [lo / (SR / 2), hi / (SR / 2)], 'band')
     return signal.lfilter(b, a, x)
@@ -147,7 +177,7 @@ def stft_filter(x, cutoff_at):
 
 # ---------------------------------------------------------------- acts 1-3: BGM bed
 t_reveal = TV(6)
-bed = bgm_span(0.0, FREEZE + 0.8, PHRASE - t_reveal)
+bed = bgm_inst(0.0, FREEZE + 0.8, B_START - t_reveal)
 # act 1: the music arrives from far away, opening fully on the river reveal
 cut = lambda t: 220.0 * (18000 / 220.0) ** (np.clip(t / t_reveal, 0, 1) ** 2.2)
 bed = stft_filter(bed, cut)
@@ -188,8 +218,6 @@ motif_minor = [(0, 0.5, 82), (0.5, 0.5, 87), (1.0, 1.0, 90), (2.0, 0.5, 89), (2.
 for (o, d, p) in motif_minor:
     note(TV(1.5 + o), d * 1.3 * TS, p, 74)
 motif_major = [(0, 0.5, 85), (0.5, 0.5, 90), (1.0, 1.0, 94), (2.0, 0.5, 92), (2.5, 0.5, 90)]                    # C#6 F#6 A#6 G#6 F#6
-for (o, d, p) in motif_major:
-    note(TV(44.0 + o), d * 1.3 * TS, p, 78)
 for i, p in enumerate([78, 82, 85, 90, 94, 97]):   # F#5 A#5 C#6 F#6 A#6 C#7 shimmer at the reunion
     note(MEET + i * 0.08, 1.4, p, 70 - i * 4, ch=1)
 for (o, d, p) in [(0, 0.5, 85), (0.5, 0.5, 90), (1.0, 1.8, 94)]:
@@ -233,45 +261,33 @@ rb = boom(1.3, 80, 30)[::-1]
 place(rb, REWIND - len(rb) / SR, 0.8)
 
 
-# ---------------------------------------------------------------- rewind: the act 2-3 mix, backwards
-def stretch(x, rate, n_fft=2048, hop=512):
-    out = []
-    for c in range(x.shape[1]):
-        f, ts_, Z = signal.stft(x[:, c], SR, nperseg=n_fft, noverlap=n_fft - hop)
-        steps = np.arange(0, Z.shape[1] - 1, rate)
-        phase = np.angle(Z[:, 0])
-        omega = 2 * np.pi * hop * np.arange(Z.shape[0]) / n_fft
-        Y = np.zeros((Z.shape[0], len(steps)), complex)
-        for i, s in enumerate(steps):
-            k = int(s); fr = s - k
-            Y[:, i] = ((1 - fr) * np.abs(Z[:, k]) + fr * np.abs(Z[:, k + 1])) * np.exp(1j * phase)
-            dphi = np.angle(Z[:, k + 1]) - np.angle(Z[:, k]) - omega
-            dphi -= 2 * np.pi * np.round(dphi / (2 * np.pi))
-            phase += omega + dphi
-        _, y = signal.istft(Y, SR, nperseg=n_fft, noverlap=n_fft - hop)
-        out.append(y)
-    L = min(len(o) for o in out)
-    return np.stack([o[:L] for o in out], 1).astype(np.float32)
+# ---------------------------------------------------------------- rewind: the music runs backwards
+def rewind_time(tau):
+    """real time at which the rewind passes scene time tau"""
+    return (28 + (26 - tau) / (20 / 14)) * TS
 
 
-seg = forward[int(t_reveal * SR):int(FREEZE * SR)]
-rew = stretch(seg, (FREEZE - t_reveal) / (REW_END - REWIND))[::-1]
 need = int((REW_END - REWIND) * SR)
-rew = rew[-need:] if len(rew) >= need else np.pad(rew, ((need - len(rew), 0), (0, 0)))
+rb_bed = bgm_inst(0.0, REW_END - REWIND + 0.1, B_START)[:need][::-1].copy()
 env = np.ones(need, np.float32)
-env[:int(0.04 * SR)] = np.linspace(0, 1, int(0.04 * SR))
-env[-int(0.7 * SR):] = np.linspace(1, 0.35, int(0.7 * SR))
-place(rew * env[:, None], REWIND, 0.95)
+env[:int(0.05 * SR)] = np.linspace(0, 1, int(0.05 * SR))
+env[-int(0.6 * SR):] = np.linspace(1, 0.3, int(0.6 * SR))
+place(rb_bed * env[:, None], REWIND, 0.8)
+for (tau, x, g) in [(20, shatter(), 0.6), (20, boom(3.5, 70, 28), 0.8), (6, boom(3.0), 0.6)]:
+    xr = x[::-1]
+    place(xr, rewind_time(tau) - len(xr) / SR, g)
+place(whoosh(0.7), REWIND - 0.1, 0.6)
 t = tt(REW_END - REWIND)
-place(np.sin(2 * np.pi * 38.9 * t) * 0.14 * np.minimum(1, t / 1.5), REWIND)   # D#1 sub drone
-place(riser(2.2, 120, 900), REW_END - 2.2, 0.45)
+place(np.sin(2 * np.pi * 38.9 * t) * 0.12 * np.minimum(1, t / 1.5), REWIND)   # D#1 sub drone
+place(riser(2.2, 120, 900), REW_END - 2.2, 0.4)
 
 # ---------------------------------------------------------------- finale: BGM from the phrase start
-fin = bgm_span(REW_END, END + 0.1, PHRASE)
+fin = clip[:int((END - REW_END + C0 + 0.1) * SR)].copy()   # vocal phrase, once
+REW_FIN = REW_END - C0
 n = len(fin)
 tf = np.arange(n) / SR
-g = np.clip(tf / 0.35, 0, 1) * (1 - np.clip((tf + REW_END - (END - 1.6)) / 1.5, 0, 1)) ** 1.2
-place(fin * g[:, None], REW_END, 0.85)
+g = np.clip(tf / 0.12, 0, 1) * (1 - np.clip((tf + REW_FIN - (END - 1.6)) / 1.5, 0, 1)) ** 1.2
+place(fin * g[:, None], REW_FIN, 0.9)
 mix[int(REW_END * SR):] += celesta[int(REW_END * SR):] * 0.6
 place(whoosh(1.4), MEET - 1.2, 0.45)
 place(boom(4.0, 55, 30), MEET, 0.5)
