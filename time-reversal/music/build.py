@@ -17,8 +17,11 @@ from scipy.io import wavfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BUILD = os.path.join(ROOT, 'build')
 SR = 48000
-END = 51.0
-FREEZE, REWIND, REW_END, SHATTER, MEET = 26.0, 28.0, 42.0, 20.0, 47.0
+SHIFT = -6                 # A minor -> D# minor (key of the vocal hook)
+TS = 0.2520 / 0.25         # match the hook's 119.05 bpm (visuals are stretched by the same factor)
+C0 = 0.106                 # first beat in the hook clip
+END = 51.0 * TS
+FREEZE, REWIND, REW_END, SHATTER, MEET = (x * TS for x in (26.0, 28.0, 42.0, 20.0, 47.0))
 NOTE = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}
 
 
@@ -39,7 +42,8 @@ class Track:
         self.ev = []
 
     def note(self, t, d, p, v=90):
-        p = P(p)
+        p = P(p) + (SHIFT if self.ch != 9 else 0)
+        t, d = t * TS, d * TS
         self.ev.append((t, 1, mido.Message('note_on', channel=self.ch, note=p, velocity=int(max(1, min(127, v))))))
         self.ev.append((t + d, 0, mido.Message('note_off', channel=self.ch, note=p, velocity=0)))
 
@@ -71,7 +75,7 @@ organ.chord(0.4, 5.6, ['A1', 'A2'], 46)
 pad.chord(1.0, 5.0, ['A3', 'C4', 'E4'], 50)
 motif = [(0, 0.5, 'E5'), (0.5, 0.5, 'A5'), (1.0, 1.0, 'C6'), (2.0, 0.5, 'B5'), (2.5, 0.5, 'A5'), (3.0, 1.4, 'E5')]
 for (o, d, n) in motif:
-    celesta.note(1.5 + o, d * 1.3, n, 78)
+    celesta.note(3.6 + o, d * 1.3, n, 66)
 
 # ---------------------------------------------------------------- act 2: river of equations (6-18)
 prog2 = [('A3', 'm'), ('F3', 'M'), ('C4', 'M'), ('G3', 'M'), ('A3', 'm'), ('F3', 'M')]
@@ -124,10 +128,10 @@ for i in range(8):  # timpani crescendo into the shatter
 for i in range(4):
     timp.note(18.0 + 1.0 + i * 0.25, 0.2, 'E2', 90 + i * 8)
 # the shatter
-timp.note(SHATTER, 1.5, 'E2', 127)
-brass.chord(SHATTER, 1.8, ['E2', 'B2', 'E3', 'G#3'], 118)
-drums.note(SHATTER, 1.5, 49, 120)
-drums.note(SHATTER, 1.5, 57, 110)
+timp.note(20.0, 1.5, 'E2', 127)
+brass.chord(20.0, 1.8, ['E2', 'B2', 'E3', 'G#3'], 118)
+drums.note(20.0, 1.5, 49, 120)
+drums.note(20.0, 1.5, 57, 110)
 for i in range(16):
     timp.note(22.0 + i * 0.25, 0.2, 'A2' if (i // 2) % 2 == 0 else 'E2', 70 + i * 3)
 revcym.note(24.45, 1.6, 'C4', 110)
@@ -145,16 +149,16 @@ for (o, d, n) in [(0, 0.5, 'E5'), (0.5, 0.5, 'A5'), (1.0, 1.0, 'C#6'), (2.0, 0.5
     celesta.note(44.0 + o, d * 1.3, n, 80)
 revcym.note(45.45, 1.6, 'C4', 96)
 A_MAJ = ['A2', 'E3', 'A3', 'C#4', 'E4', 'A4', 'C#5']
-choir.chord(MEET, 4.0, A_MAJ[2:], 96)
-strings.chord(MEET, 4.0, A_MAJ, 96)
-pad.chord(MEET, 4.0, A_MAJ[2:], 80)
-organ.chord(MEET, 4.0, ['A1', 'A2', 'E3', 'A3'], 80)
-brass.chord(MEET, 2.0, ['A2', 'E3', 'C#4'], 84)
-horn.note(MEET, 3.0, 'E5', 88)
-timp.note(MEET, 1.0, 'A2', 112)
-drums.note(MEET, 3.0, 57, 100)
+choir.chord(47.0, 4.0, A_MAJ[2:], 96)
+strings.chord(47.0, 4.0, A_MAJ, 96)
+pad.chord(47.0, 4.0, A_MAJ[2:], 80)
+organ.chord(47.0, 4.0, ['A1', 'A2', 'E3', 'A3'], 80)
+brass.chord(47.0, 2.0, ['A2', 'E3', 'C#4'], 84)
+horn.note(47.0, 3.0, 'E5', 88)
+timp.note(47.0, 1.0, 'A2', 112)
+drums.note(47.0, 3.0, 57, 100)
 for i, n in enumerate(['A5', 'C#6', 'E6', 'A6', 'C#7', 'E7']):
-    glock.note(MEET + i * 0.08, 1.2, n, 70 - i * 4)
+    glock.note(47.0 + i * 0.08, 1.2, n, 70 - i * 4)
 for (o, d, n) in [(0, 0.5, 'E5'), (0.5, 0.5, 'A5'), (1.0, 1.6, 'C#6')]:
     celesta.note(48.6 + o, d * 1.3, n, 72)
 
@@ -183,6 +187,16 @@ score = score.astype(np.float32) / 32768.0
 N = int(END * SR) + SR
 mix = np.zeros((N, 2), np.float32)
 mix[:min(N, len(score))] += score[:N]
+# (vocal hook is added below once loaded)
+
+# ---------------------------------------------------------------- vocal hook (first seconds)
+_, hook = wavfile.read(os.path.join(BUILD, 'audio_in', 'user.wav'))
+hook = hook.astype(np.float32) / 32768.0
+hook = hook[int(C0 * SR):int((C0 + 6.0 * TS + 0.5) * SR)]           # clip c=C0 -> video t=0
+th = np.arange(len(hook)) / SR
+hg = np.clip(th / 0.04, 0, 1) * np.where(th < 3.5, 1.0, np.clip(1 - (th - 3.5) / 2.9, 0, 1) * 0.55 + 0.45 * np.clip(1 - (th - 3.5) / 2.0, 0, 1))
+hook_gain = 0.7
+mix_hook = (hook * hg[:, None] * hook_gain).astype(np.float32)
 
 # ---------------------------------------------------------------- SFX
 rng = np.random.default_rng(7)
@@ -261,12 +275,14 @@ def whoosh(d=0.9):
     return out * env * 0.45
 
 
+mix[:len(mix_hook)] += mix_hook
 # ticks on every beat (acts 1-3)
-for k in range(1, int(FREEZE / 0.5)):
-    t0 = k * 0.5
-    g = 0.55 if t0 < 6 else (0.32 if t0 < 18 else 0.5)
+for k in range(1, int(26.0 / 0.5)):
+    t0 = k * 0.5 * TS
+    g = (0.22 + 0.33 * min(1, max(0, (t0 - 2.5) / 3.0))) if t0 < 6 * TS else (0.32 if t0 < 18 * TS else 0.5)
     place(tick(k % 2 == 0), t0, g, pan=0.15 if k % 2 else -0.15)
-place(boom(3.0), 6.0, 0.75)
+place(boom(3.0), 6.0 * TS, 0.75)
+place(riser(1.5, 160, 1200), 6.0 * TS - 1.5, 0.4)   # lift from the hook into the river reveal
 place(boom(3.5, 70, 28), SHATTER, 1.0)
 place(shatter(), SHATTER, 0.9)
 place(riser(1.5), FREEZE - 1.5, 0.7)
@@ -283,7 +299,7 @@ forward = mix.copy()   # what the rewind will be made of
 t = tt(1.8)
 place(np.sin(2 * np.pi * 6200 * t) * np.exp(-t * 2.2) * 0.03, FREEZE)
 for t0 in (26.55, 26.8, 27.25, 27.5):
-    place(heartbeat(), t0, 0.55)
+    place(heartbeat(), t0 * TS, 0.55)
 rb = boom(1.4, 80, 30)[::-1]
 place(rb, REWIND - len(rb) / SR, 0.8)
 
@@ -310,8 +326,8 @@ def stretch(x, rate, n_fft=2048, hop=512):
     return np.stack([o[:L] for o in out], 1).astype(np.float32)
 
 
-seg = forward[int(6.0 * SR):int(FREEZE * SR)]
-rew = stretch(seg, (FREEZE - 6.0) / (REW_END - REWIND))[::-1]
+seg = forward[int(6.0 * TS * SR):int(FREEZE * SR)]
+rew = stretch(seg, (FREEZE - 6.0 * TS) / (REW_END - REWIND))[::-1]
 need = int((REW_END - REWIND) * SR)
 rew = rew[-need:] if len(rew) >= need else np.pad(rew, ((need - len(rew), 0), (0, 0)))
 env = np.ones(need, np.float32)
@@ -327,7 +343,7 @@ place(riser(2.2, 120, 900), REW_END - 2.2, 0.55)
 # finale: whoosh into the reunion, a last tick
 place(whoosh(1.4), MEET - 1.2, 0.5)
 place(boom(4.0, 55, 30), MEET, 0.55)
-place(tick(True), 50.0, 0.6)
+place(tick(True), 50.0 * TS, 0.6)
 
 # ---------------------------------------------------------------- master
 mix = mix[:int(END * SR)]
