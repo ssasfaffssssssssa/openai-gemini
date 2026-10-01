@@ -5,13 +5,16 @@ import { buildAtlas, buildRiver } from './river.js';
 import { buildClock } from './clock.js';
 import { buildLovers } from './lovers.js';
 import { WriteOn } from './hero.js';
-import { T, P, tauAt, mode, cameraAt, camByTau, clamp, lerp, smooth, ease, spiralIn } from './timeline.js';
+import { T, P, tauAt, mode, cameraAt, camByTau, clamp, lerp, smooth, ease, spiralIn, setPortrait } from './timeline.js';
 
 const qs = new URLSearchParams(location.search);
 const W = +(qs.get('w') || 1920), H = +(qs.get('h') || 1080);
 const PX = Math.min(W, H) / 1080;
-const SCOPE = 2.39;                                   // cinema letterbox
-const BAR_PX = Math.max(0, (H - W / SCOPE) / 2);
+const PORTRAIT = H > W;                               // 9:16 build: own camera keys and layout, no letterbox
+setPortrait(PORTRAIT);
+const SZ = (land, port) => (PORTRAIT ? port : land);
+const SCOPE = 2.39;                                   // cinema letterbox (landscape)
+const BAR_PX = PORTRAIT ? 0 : Math.max(0, (H - W / SCOPE) / 2);
 const BH_SCALE = +(qs.get('bh') || 0.6);
 
 const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
@@ -97,7 +100,7 @@ const finalPass = fsPass(/* glsl */ `
   tMain: { value: mainRT.texture }, tStreak: { value: streakB.texture }, tPrev: { value: frameB.texture },
   exposure: { value: 1 }, streakAmt: { value: 0.16 }, vig: { value: 0.55 }, grain: { value: 0.02 }, ca: { value: 0.0018 }, glitch: { value: 0 },
   freeze: { value: 0 }, rewind: { value: 0 }, trail: { value: 0 }, fade: { value: 0 }, flash: { value: 0 }, time: { value: 0 }, warm: { value: 0 },
-  res: { value: new THREE.Vector2(W, H) }, shock: { value: new THREE.Vector4(0.5, 0.5, 0, 0) }, lbox: { value: qs.get('nolb') ? 0.6 : 0.5 - BAR_PX / H },
+  res: { value: new THREE.Vector2(W, H) }, shock: { value: new THREE.Vector4(0.5, 0.5, 0, 0) }, lbox: { value: qs.get('nolb') || PORTRAIT ? 0.6 : 0.5 - BAR_PX / H },
 });
 const copyPass = fsPass('uniform sampler2D t; varying vec2 vUv; void main(){ gl_FragColor = vec4(texture2D(t, vUv).rgb, 1.0); }', { t: { value: null } });
 
@@ -137,20 +140,20 @@ function caption(text, t0, t1, yPx, opts = {}) {
   return { chars, t0, t1, y: yPx * PX, stagger: opts.stagger ?? 0.07, clock: opts.clock || 'story', times: opts.times, zip: opts.zip };
 }
 // y positions (px from centre): subtitles live in the lower letterbox bar, poetry inside the picture
-const Y_SUB = -H / 2 + BAR_PX / 2;
+const Y_SUB = PORTRAIT ? -0.31 * H : -H / 2 + BAR_PX / 2;
 const Y_POEM = -H / 2 + BAR_PX + 74;
-const SUB = { size: 42, spacing: 6, clock: 'real', glow: 'rgba(255,220,190,0.35)', weight: 500 };
+const SUB = { size: SZ(42, 54), spacing: SZ(6, 8), clock: 'real', glow: 'rgba(255,220,190,0.35)', weight: 500 };
 // her line, character by character, timed by speech recognition of the hook audio
 const captions = [
   caption('我会找到逆转时间的公式', 0.14, 99, Y_SUB / PX, { ...SUB, times: [0.14, 0.32, 0.50, 0.62, 0.74, 0.92, 1.10, 1.22, 1.34, 1.52, 1.64], zip: [1.95, 2.40] }),
   caption('然后回到你身边', 3.38, 7.8, Y_SUB / PX, { ...SUB, times: [3.38, 3.56, 5.30, 5.48, 5.66, 5.78, 5.96] }),
-  caption('宇宙写下的每一条定律', 9.3, 12.6, Y_SUB / PX, { size: 46 }),
-  caption('都指向同一个方向', 12.9, 16.1, Y_SUB / PX, { size: 46 }),
-  caption('熵增：时间只能向前', 21.3, 25.3, Y_SUB / PX, { size: 46 }),
-  caption('除非——', 28.5, 30.3, Y_SUB / PX, { size: 50 }),
-  caption('把 t 换成 −t', 30.5, 33.8, Y_SUB / PX, { size: 50 }),
-  caption('我找到了逆转时间的公式', 45.6, 48.15, Y_SUB / PX, { size: 50, stagger: 0.08 }),
-  caption('然后，回到了你身边', 48.3, 50.7, Y_SUB / PX, { size: 50, color: '#ffd9d2', glow: 'rgba(255,140,160,0.75)', stagger: 0.12 }),
+  caption('宇宙写下的每一条定律', 9.3, 12.6, Y_SUB / PX, { size: SZ(46, 58) }),
+  caption('都指向同一个方向', 12.9, 16.1, Y_SUB / PX, { size: SZ(46, 58) }),
+  caption('熵增：时间只能向前', 21.3, 25.3, Y_SUB / PX, { size: SZ(46, 58) }),
+  caption('除非——', 28.5, 30.3, Y_SUB / PX, { size: SZ(50, 66) }),
+  caption('把 t 换成 −t', 30.5, 33.8, Y_SUB / PX, { size: SZ(50, 66) }),
+  caption('我找到了逆转时间的公式', 45.6, 48.15, Y_SUB / PX, { size: SZ(50, 58), stagger: 0.08 }),
+  caption('然后，回到了你身边', 48.3, 50.7, Y_SUB / PX, { size: SZ(50, 58), color: '#ffd9d2', glow: 'rgba(255,140,160,0.75)', stagger: 0.12 }),
 ];
 function updateCaptions(t, TR) {
   for (const cp of captions) {
@@ -176,8 +179,9 @@ function updateCaptions(t, TR) {
 const tcCanvas = document.createElement('canvas'); tcCanvas.width = 560; tcCanvas.height = 90;
 const tcTex = new THREE.CanvasTexture(tcCanvas); tcTex.colorSpace = THREE.NoColorSpace;
 const tcMat = new THREE.MeshBasicMaterial({ map: tcTex, transparent: true, depthTest: false, toneMapped: false });
-const tcMesh = new THREE.Mesh(new THREE.PlaneGeometry(560 * PX * 0.78, 90 * PX * 0.78), tcMat);
-tcMesh.position.set(-W / 2 + (64 + 280 * 0.78) * PX, H / 2 - Math.max(BAR_PX / 2, 70 * PX), 0);
+const TC_S = SZ(0.78, 1.0);
+const tcMesh = new THREE.Mesh(new THREE.PlaneGeometry(560 * PX * TC_S, 90 * PX * TC_S), tcMat);
+tcMesh.position.set(-W / 2 + (64 + 280 * TC_S) * PX, H / 2 - (PORTRAIT ? 110 * PX : Math.max(BAR_PX / 2, 70 * PX)), 0);
 hud.add(tcMesh);
 function updateTimecode(t, tau, TR, zip) {
   const g = tcCanvas.getContext('2d');
@@ -209,16 +213,17 @@ async function setup() {
   await document.fonts.load('600 60px "CMU Serif"').catch(() => {});
   await document.fonts.load('34px "CMU Typewriter Text"').catch(() => {});
   const atlas = await buildAtlas(eq.river);
-  river = buildRiver(atlas, +(qs.get('glyphs') || 12000));
+  river = buildRiver(atlas, +(qs.get('glyphs') || SZ(12000, 10000)));
+  river.set('uSize', SZ(1.0, 0.85));
   scene.add(river.group);
   clock = buildClock(H);
   scene.add(clock.group);
   lovers = buildLovers();
   scene.add(lovers.group);
-  heroT = new WriteOn(eq.hero.t, 360, new THREE.Color(1.5, 1.25, 1.0), 0.72, 0.3);
-  heroS = new WriteOn(eq.hero.entropy, 240, new THREE.Color(1.5, 1.0, 0.55), 0.8);
+  heroT = new WriteOn(eq.hero.t, 360, new THREE.Color(1.5, 1.25, 1.0), SZ(0.72, 0.9), 0.3);
+  heroS = new WriteOn(eq.hero.entropy, 240, new THREE.Color(1.5, 1.0, 0.55), SZ(0.8, 0.72));
   heroFlip = new WriteOn(eq.hero.flip, 260, new THREE.Color(1.2, 1.35, 1.7), 0.9);
-  heroFinal = new WriteOn(eq.hero.final, 300, new THREE.Color(1.5, 1.3, 1.0), 0.74);
+  heroFinal = new WriteOn(eq.hero.final, 300, new THREE.Color(1.5, 1.3, 1.0), SZ(0.74, 0.62));
   for (const h of [heroT, heroS, heroFlip, heroFinal]) scene.add(h.mesh);
   // fixed orientations
   const camC = camByTau(19).pos;
@@ -316,7 +321,8 @@ async function renderFrame(tReal) {
   // hero: entropy
   {
     const p = smooth(20.7, 22.2, tau);
-    const base = P.CLOCK.clone().add(clockBasis.fwd.clone().multiplyScalar(1.2)).add(clockBasis.up.clone().multiplyScalar(0.15));
+    const base = P.CLOCK.clone().add(clockBasis.fwd.clone().multiplyScalar(1.2))
+      .add(clockBasis.up.clone().multiplyScalar(SZ(0.15, 0.5))).add(clockBasis.right.clone().multiplyScalar(SZ(0, -1.7)));
     const s = clamp((tau - 23.0) / 3.0);
     const pos = s > 0 ? base.clone().lerp(spiralIn(base, s, 2.0, 1.4), smooth(0, 0.1, s)) : base;
     faceCamera(heroS.mesh, pos);

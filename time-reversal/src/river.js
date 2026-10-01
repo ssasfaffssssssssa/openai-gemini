@@ -43,6 +43,7 @@ uniform float uOpacity;
 uniform float uConv;
 uniform float uFlash;
 uniform float uBeat;
+uniform float uSize;
 uniform vec3 uFormPos, uFormRight, uFormUp;
 attribute vec4 aRect;
 attribute vec4 aLane;   // v, w, u0, speed jitter
@@ -70,7 +71,7 @@ void main() {
   vec3 c2 = riverPos(min(u + 0.004, 0.999), aLane, R2, R02);
   vec3 tang = normalize(c2 - c + 1e-5);
   float near = 1.0 - smoothstep(2.4, 6.0, R);
-  float hgt = 0.24 * pow(R / R0, 0.5) * (0.75 + 0.5 * aSeed.y);
+  float hgt = 0.24 * uSize * pow(R / R0, 0.5) * (0.75 + 0.5 * aSeed.y);
   float wid = hgt * aSeed.x * (1.0 + 2.6 * near);
   hgt *= 1.0 - 0.55 * near;
   // converge into the final formula
@@ -136,7 +137,7 @@ export function buildRiver(atlas, count = 15000) {
   geo.instanceCount = count;
   const mk = (sign) => new THREE.ShaderMaterial({
     uniforms: {
-      map: { value: atlas.tex }, tau: { value: 0 }, uOpacity: { value: 1 }, uConv: { value: 0 }, uFlash: { value: 0 }, uBeat: { value: 0 },
+      map: { value: atlas.tex }, uSize: { value: 1 }, tau: { value: 0 }, uOpacity: { value: 1 }, uConv: { value: 0 }, uFlash: { value: 0 }, uBeat: { value: 0 },
       uSign: { value: sign }, uFormPos: { value: new THREE.Vector3() }, uFormRight: { value: new THREE.Vector3(1, 0, 0) }, uFormUp: { value: new THREE.Vector3(0, 1, 0) },
     },
     vertexShader: VERT, fragmentShader: FRAG,

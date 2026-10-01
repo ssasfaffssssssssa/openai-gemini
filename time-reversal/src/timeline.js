@@ -41,7 +41,7 @@ export const P = {
 P.MEET = P.MEET_CAM.clone().multiplyScalar(0.42);   // lovers meet right in front of the black hole
 
 // ---------------------------------------------------------------- camera keys (by tau)
-const KEYS = [   // landscape (16:9, scope letterbox) framings; fov is vertical
+const KEYS_LAND = [   // landscape (16:9, scope letterbox) framings; fov is vertical
   [0.0, V(9.35, 4.15, 26.0), V(9.35, 4.12, 22.0), 30],
   [4.1, V(9.35, 4.15, 25.45), V(9.35, 4.12, 22.0), 30],
   [6.4, V(8.6, 4.6, 31.5), V(6.3, 3.0, 17.0), 34],
@@ -52,6 +52,24 @@ const KEYS = [   // landscape (16:9, scope letterbox) framings; fov is vertical
   [22.0, V(8.2, 3.6, 25.5), V(3.6, 1.9, 3.5), 32],
   [26.0, V(5.6, 2.4, 19.5), V(2.0, 0.6, 2.0), 34],
 ];
+const KEYS_PORT = [   // portrait (9:16) framings
+  [0.0, V(9.3, 4.05, 26.6), V(9.3, 4.0, 22.0), 46],
+  [4.1, V(9.32, 4.1, 25.7), V(9.32, 4.02, 22.0), 46],
+  [6.4, V(8.6, 4.8, 31.5), V(6.6, 3.0, 17.0), 48],
+  [9.5, V(5.6, 3.2, 33.0), V(3.6, 0.6, 0.0), 50],
+  [13.0, V(4.2, 2.3, 26.5), V(2.4, 0.3, 0.0), 50],
+  [16.2, V(2.8, 1.25, 15.5), V(0.7, 0.1, 0.0), 52],
+  [18.4, V(9.0, 4.2, 28.5), V(5.2, 2.2, 6.0), 50],
+  [22.0, V(7.8, 3.3, 24.5), V(3.6, 1.3, 3.5), 50],
+  [26.0, V(5.6, 2.5, 20.0), V(2.0, 0.6, 2.0), 50],
+];
+let KEYS = KEYS_LAND;
+let FOV_END = 30;
+export function setPortrait(portrait) {
+  KEYS = portrait ? KEYS_PORT : KEYS_LAND;
+  FOV_END = portrait ? 44 : 30;
+  P.CLOCK_R = portrait ? 3.1 : 2.7;
+}
 function catmull(p0, p1, p2, p3, u) {
   const u2 = u * u, u3 = u2 * u;
   return p1.clone().multiplyScalar(2)
@@ -89,7 +107,7 @@ export function cameraAt(t) {
     const u = ease((t - T.REW_END) / 3.2);
     const look = P.MEET.clone().add(V(0, 0.9, 0));
     const pos = P.MEET_CAM.clone().lerp(P.MEET, smooth(44, 51, t) * 0.28);
-    c = { pos: c.pos.lerp(pos, u), look: c.look.lerp(look, u), fov: lerp(c.fov, 30, u) };
+    c = { pos: c.pos.lerp(pos, u), look: c.look.lerp(look, u), fov: lerp(c.fov, FOV_END, u) };
   }
   // gentle handheld float
   c.pos.x += Math.sin(t * 0.7) * 0.05 + Math.sin(t * 1.9) * 0.015;
