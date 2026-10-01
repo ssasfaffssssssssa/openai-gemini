@@ -33,7 +33,7 @@ const camera = new THREE.PerspectiveCamera(42, W / H, 0.05, 900);
 const C = (h) => new THREE.Color(h);
 const PAL = {
   intro: { top: C(0x1c2266), mid: C(0xc0507a), bot: C(0xff8a3a), fog: C(0x9a5070), fogD: 0.0065, hemiS: C(0xffc8a0), hemiG: C(0x3a2040), hemi: 0.55, key: C(0xffb070), keyI: 2.0, rim: C(0xff6a30), rimI: 3.0, env: 0.4, bloom: 0.4, exp: 0.9, stars: 0.0, trail: C(0xffc070) },
-  mozart: { top: C(0x24348a), mid: C(0xa8507e), bot: C(0xff9a50), fog: C(0x8a4a70), fogD: 0.0055, hemiS: C(0xffe2c8), hemiG: C(0x4a3a6a), hemi: 0.6, key: C(0xffe2c0), keyI: 2.0, rim: C(0xff8a50), rimI: 2.2, env: 0.5, bloom: 0.5, exp: 0.9, stars: 0.0, trail: C(0xffd27a) },
+  mozart: { top: C(0x24348a), mid: C(0xa8507e), bot: C(0xff9a50), fog: C(0x7a4068), fogD: 0.0035, hemiS: C(0xffe2c8), hemiG: C(0x4a3a6a), hemi: 0.6, key: C(0xffe2c0), keyI: 2.0, rim: C(0xff8a50), rimI: 2.2, env: 0.5, bloom: 0.5, exp: 0.9, stars: 0.0, trail: C(0xffd27a) },
   cave: { top: C(0x05040c), mid: C(0x0e0820), bot: C(0x1c0c3c), fog: C(0x0c0820), fogD: 0.04, hemiS: C(0x7a6aff), hemiG: C(0x120820), hemi: 0.45, key: C(0xc0b0ff), keyI: 1.4, rim: C(0x30e0ff), rimI: 2.2, env: 0.3, bloom: 0.6, exp: 1.05, stars: 0.0, trail: C(0x5ae8ff) },
   cancan: { top: C(0x16000a), mid: C(0x3a0416), bot: C(0x6a0a26), fog: C(0x2a0410), fogD: 0.02, hemiS: C(0xffb0b8), hemiG: C(0x2a0010), hemi: 0.45, key: C(0xffe2b0), keyI: 1.8, rim: C(0xff4a8a), rimI: 2.0, env: 0.4, bloom: 0.55, exp: 1.0, stars: 0.0, trail: C(0xff7ab0) },
   night: { top: C(0x060a1a), mid: C(0x0c1430), bot: C(0x18224a), fog: C(0x0a0f22), fogD: 0.012, hemiS: C(0x8090ff), hemiG: C(0x302018), hemi: 0.5, key: C(0xa8bcff), keyI: 1.1, rim: C(0x6a8cff), rimI: 1.2, env: 0.35, bloom: 0.5, exp: 1.05, stars: 1.0, trail: C(0xffe2a0) },

@@ -64,7 +64,7 @@ export function buildPads(ctx) {
     const r = rng(h.i * 13 + 5);
 
     if (type === 'key') {
-      const m = phys(0xf7f1e3, { roughness: 0.18, clearcoat: 0.8, clearcoatRoughness: 0.1, emissive: 0xffb347, emissiveIntensity: 0 });
+      const m = phys(0xe9e1cf, { roughness: 0.22, clearcoat: 0.8, clearcoatRoughness: 0.1, emissive: 0xffb347, emissiveIntensity: 0 });
       const key = new THREE.Mesh(keyGeo, m);
       inner.add(key);
       const gm = goldMat.clone();
@@ -75,7 +75,7 @@ export function buildPads(ctx) {
       const bk = new THREE.Mesh(new RoundedBoxGeometry(0.16, 0.1, 0.5, 2, 0.02), phys(0x111111, { roughness: 0.15, clearcoat: 1 }));
       bk.position.set(r() < 0.5 ? -0.12 : 0.12, 0.12, -0.26);
       inner.add(bk);
-      glowMats.push({ m, base: 0.04, peak: 0.35 }, { m: gm, base: 0.25, peak: 2.0 });
+      glowMats.push({ m, base: 0.0, peak: 0.12 }, { m: gm, base: 0.35, peak: 2.4 });
       accent.set(0xffc060);
     } else if (type === 'rock') {
       const geo = rockify(new THREE.DodecahedronGeometry(1, 1), 0.18, 1.6, h.i);
@@ -294,7 +294,7 @@ export function buildCity(ctx) {
   // clouds
   const ct = cloudTex();
   const clouds = [];
-  for (let i = 0; i < 46; i++) {
+  for (let i = 0; i < 30; i++) {
     const m = new THREE.SpriteMaterial({ map: ct, color: new THREE.Color().setHSL(0.93 + r() * 0.1, 0.55, 0.62), transparent: true, opacity: 0.18 + r() * 0.22, depthWrite: false });
     const s = new THREE.Sprite(m);
     const sc = 5 + r() * 9;
