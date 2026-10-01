@@ -8,7 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { serve } from './tools/server.mjs';
 
-const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, arr) => (v.startsWith('--') ? a.concat([[v.slice(2), arr[i + 1]]]) : a), []));
+const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, arr) => (v.startsWith('--') ? a.concat([[v.slice(2), arr[i + 1] && !arr[i + 1].startsWith('--') ? arr[i + 1] : true]]) : a), []));
 const W = +(args.w || 1080), H = +(args.h || 1920), FPS = +(args.fps || 30);
 const WORKERS = +(args.workers || 1);
 const OUT = args.out || 'build/t-minus-t.mp4';
@@ -42,7 +42,11 @@ async function worker(id, f0, f1) {
   });
   await new Promise((r) => sink.listen(port + 100, r));
   const srv = await serve(ROOT, port);
-  const browser = await chromium.launch({ executablePath: CHROME, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-web-security'] });
+  // --gpu: use the locally installed Google Chrome with hardware WebGL (much faster on a desktop GPU);
+  // default: bundled Chromium with SwiftShader software rendering (works in GPU-less containers).
+  const browser = args.gpu
+    ? await chromium.launch({ channel: 'chrome', args: ['--ignore-gpu-blocklist', '--enable-gpu-rasterization', '--disable-web-security'] })
+    : await chromium.launch({ executablePath: CHROME, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-web-security'] });
   const page = await browser.newPage({ viewport: { width: Math.min(W, 1080), height: Math.min(H, 1920) } });
   page.on('pageerror', (e) => console.log(`[w${id}] pageerror`, e.message));
   await page.goto(`http://localhost:${port}/src/index.html?w=${W}&h=${H}&bh=${BH}`);

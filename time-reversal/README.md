@@ -28,3 +28,13 @@ python3 music/final.py          # needs build/audio_in/user.wav (the hook clip)
 node tools/stills.mjs 540 960 10 24 47.2            # preview stills
 node render.mjs --w 1920 --h 1080 --fps 30 --workers 3 --out build/t-minus-t.mp4
 ```
+
+## 在自己电脑上渲染（有独立显卡会快很多）
+1. 安装：Node.js 18+、Python 3、ffmpeg、FluidSynth 和 GM 音色库（FluidR3_GM.sf2）、Google Chrome，以及字体 Noto Serif CJK SC 和 CMU Serif（Computer Modern）。
+2. 拉取代码：`git clone -b claude/vigilant-heisenberg-k3dp1r https://github.com/ssasfaffssssssssa/openai-gemini`，然后 `cd openai-gemini/time-reversal`。
+3. 安装依赖：`npm install`，再运行 `pip install mido numpy scipy pillow`。
+4. 把开头那段女声音频转成 48kHz 的 WAV：`ffmpeg -i 你的音频.mp3 -ar 48000 build/audio_in/user.wav`。
+5. 生成素材和配乐：`node tools/typeset.mjs`，然后 `python3 music/final.py`（音色库路径不同的话，改 `music/final.py` 里的 FluidR3_GM.sf2 路径）。
+6. 用显卡渲染：`node render.mjs --w 1920 --h 1080 --fps 30 --workers 1 --gpu --out build/final.mp4`
+
+渲染结果是确定的：同一份代码、同样的字体，在哪台电脑上渲染出来都一样，只是速度不同。
