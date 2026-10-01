@@ -17,7 +17,7 @@ const CRF = args.crf || '17';
 const ROOT = path.dirname(new URL(import.meta.url).pathname);
 const CHROME = process.env.CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
-const DURATION = 51 * (0.2520 / 0.25);
+const DURATION = (0.106 + 4 * 2.016) + 45 * (0.2520 / 0.25);   // matches END_REAL in src/main.js
 const total = Math.ceil(DURATION * FPS);
 const startAt = Date.now();
 fs.mkdirSync(path.join(ROOT, 'build/segments'), { recursive: true });

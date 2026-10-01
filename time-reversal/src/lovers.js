@@ -90,7 +90,7 @@ export function buildLovers() {
     update(t, tauOf, camera) {
       const tau = tauOf(t);
       const now = loversAt(t, tau);
-      const appear = smooth(1.2, 2.8, tau) * (t >= T.REW_END ? 1 : 1);
+      const appear = smooth(3.1, 3.55, tau);
       const cam = camera.position;
       [now.A, now.B].forEach((p, i) => {
         const L = lights[i];

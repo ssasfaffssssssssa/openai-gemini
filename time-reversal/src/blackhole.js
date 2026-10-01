@@ -16,6 +16,7 @@ uniform float tau;
 uniform float diskGain;
 uniform float starGain;
 uniform float glow;
+uniform float holeGain;
 varying vec2 vUv;
 
 float h21(vec2 p){ p = fract(p*vec2(123.34, 456.21)); p += dot(p, p+45.32); return fract(p.x*p.y); }
@@ -139,6 +140,8 @@ void main(){
   // soft glow hugging the photon sphere
   float ring = exp(-pow((minR - 1.5) * 3.2, 2.0)) * glow;
   vec3 col = sum.rgb + (1.0 - sum.a) * bg + ring * vec3(1.0, 0.72, 0.42) * (captured ? 0.0 : 1.0);
+  // before it is revealed the hole is invisible: plain, unlensed starfield
+  if (holeGain < 0.999) { col = mix(sky(dir), col, holeGain); depth = mix(1e4, depth, step(0.5, holeGain)); }
   gl_FragColor = vec4(col, depth);
 }
 `;
@@ -148,7 +151,7 @@ export function createBlackHole(renderer, w, h) {
   const mat = new THREE.ShaderMaterial({
     uniforms: {
       camPos: { value: new THREE.Vector3() }, camRight: { value: new THREE.Vector3() }, camUp: { value: new THREE.Vector3() }, camFwd: { value: new THREE.Vector3() },
-      tanHalf: { value: 0.4 }, aspect: { value: w / h }, tau: { value: 0 }, diskGain: { value: 1 }, starGain: { value: 1 }, glow: { value: 0.35 },
+      tanHalf: { value: 0.4 }, aspect: { value: w / h }, tau: { value: 0 }, diskGain: { value: 1 }, starGain: { value: 1 }, glow: { value: 0.35 }, holeGain: { value: 1 },
     },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
     fragmentShader: frag,

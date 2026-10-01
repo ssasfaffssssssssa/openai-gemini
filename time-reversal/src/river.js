@@ -52,7 +52,7 @@ varying float vAlpha;
 varying vec3 vCol;
 
 vec3 riverPos(float u, vec4 lane, out float R, out float R0) {
-  vec3 S = vec3(12.0 + 3.0 * lane.y, 15.5 * lane.x, -2.5 + 7.5 * lane.y);
+  vec3 S = vec3(19.0 + 4.0 * lane.y, 15.5 * lane.x, -6.0 + 9.0 * lane.y);
   R0 = length(S.xz);
   float phi0 = atan(S.z, S.x);
   float e = 1.0 - pow(1.0 - u, 2.3);
@@ -70,7 +70,7 @@ void main() {
   vec3 c2 = riverPos(min(u + 0.004, 0.999), aLane, R2, R02);
   vec3 tang = normalize(c2 - c + 1e-5);
   float near = 1.0 - smoothstep(2.4, 6.0, R);
-  float hgt = 0.2 * pow(R / R0, 0.55) * (0.75 + 0.5 * aSeed.y);
+  float hgt = 0.24 * pow(R / R0, 0.5) * (0.75 + 0.5 * aSeed.y);
   float wid = hgt * aSeed.x * (1.0 + 2.6 * near);
   hgt *= 1.0 - 0.55 * near;
   // converge into the final formula
@@ -82,6 +82,9 @@ void main() {
   vec3 X = normalize(tang - view * dot(tang, view));
   if (k > 0.0) X = normalize(mix(X, uFormRight, k));
   vec3 Y = normalize(cross(view, X));
+  // keep the text upright on screen (scrolls like a ticker instead of turning upside down)
+  vec3 camUp = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
+  if (dot(Y, camUp) < 0.0) { X = -X; Y = -Y; }
   float sc = 1.0 - 0.85 * k;
   vec3 wp = c + X * position.x * wid * sc + Y * position.y * hgt * sc;
   float vis;
@@ -93,7 +96,7 @@ void main() {
   float swallow = smoothstep(1.95, 2.9, R);
   float dist = length(cameraPosition - c);
   float fog = exp(-dist * 0.018) * smoothstep(1.5, 5.0, dist);
-  vAlpha = uOpacity * fadeIn * swallow * vis * fog * (1.0 - k * k) * (0.25 + 0.45 * aSeed.w) * (1.0 - 0.55 * near);
+  vAlpha = uOpacity * fadeIn * swallow * vis * fog * (1.0 - k * k) * (0.3 + 0.5 * aSeed.w) * (1.0 - 0.55 * near);
   float heat = smoothstep(0.55, 0.95, near + u * 0.35);
   vec3 cold = vec3(0.78, 0.86, 1.0);
   vec3 hot = vec3(1.0, 0.62, 0.28);

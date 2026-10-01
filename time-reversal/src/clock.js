@@ -111,7 +111,7 @@ void main() {
     vec3 sp = vec3(R * cos(phi), h0.y * pow(1.0 - s, 1.8), R * sin(phi));
     p = mix(home, sp, smoothstep(0.0, 0.08, s)) + kick * (1.0 - smoothstep(0.0, 0.08, s));
     heat = smoothstep(0.25, 0.9, s);
-    swallow = smoothstep(1.7, 2.6, R);
+    swallow = smoothstep(2.0, 3.4, R);
   }
   float vis;
   vec3 lp3 = lensP(p, vis);
@@ -122,7 +122,7 @@ void main() {
   gl_PointSize = clamp(size, 1.0, 6.0);
   vec3 cool = kind > 2.5 ? vec3(1.0, 0.55, 0.62) : vec3(1.0, 0.92, 0.8);
   vec3 hot = vec3(1.0, 0.55, 0.22);
-  vCol = mix(cool, hot, heat) * (0.42 + 0.55 * heat + uBeat * (kind > 2.5 ? 0.8 : 0.12));
+  vCol = mix(cool, hot, heat) * (0.42 + 0.25 * heat + uBeat * (kind > 2.5 ? 0.8 : 0.12));
   float appear = smoothstep(0.0, 0.25, fs) ;
   vAlpha = appear * swallow * vis * (0.35 + 0.4 * aSeed.z) * clamp(2.4 / size, 0.25, 1.0) * smoothstep(4.0, 9.0, -mv.z) * (1.0 - 0.45 * heat);
 }`;
