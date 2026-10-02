@@ -5,7 +5,7 @@ import { buildAtlas, buildRiver } from './river.js';
 import { buildClock } from './clock.js';
 import { buildLovers } from './lovers.js';
 import { WriteOn } from './hero.js';
-import { T, P, tauAt, mode, cameraAt, camByTau, clamp, lerp, smooth, ease, spiralIn, setPortrait } from './timeline.js';
+import { T, P, tauAt, mode, cameraAt, camByTau, clamp, lerp, smooth, ease, spiralIn, setPortrait, ringAnchors } from './timeline.js';
 
 const qs = new URLSearchParams(location.search);
 const W = +(qs.get('w') || 1920), H = +(qs.get('h') || 1080);
@@ -57,14 +57,14 @@ const frameB = frameA.clone();
 let writeRT = frameA, readRT = frameB;
 const finalPass = fsPass(/* glsl */ `
   uniform sampler2D tMain, tStreak, tPrev;
-  uniform float exposure, streakAmt, vig, grain, ca, glitch, freeze, rewind, trail, fade, flash, time, warm, lbox;
+  uniform float exposure, streakAmt, vig, grain, ca, glitch, freeze, rewind, trail, fade, flash, time, warm, lbox, heart;
   uniform vec2 res;
   uniform vec4 shock;
   varying vec2 vUv;
   float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233)) + time * 7.13) * 43758.5453); }
   vec3 aces(vec3 x){ return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
   void main(){
-    vec2 uv = vUv;
+    vec2 uv = 0.5 + (vUv - 0.5) * (1.0 - 0.011 * heart);   // heartbeat: the frame swells a little
     // reunion shockwave
     vec2 sd = (uv - shock.xy) * vec2(res.x / res.y, 1.0);
     float sr = length(sd);
@@ -90,7 +90,8 @@ const finalPass = fsPass(/* glsl */ `
     c += ring * vec3(1.0, 0.8, 0.5) * 0.18;
     vec3 prev = texture2D(tPrev, vUv).rgb;
     c = max(c, prev * trail);
-    c *= 1.0 - vig * smoothstep(0.12, 0.85, r2);
+    c *= 1.0 - (vig + 0.45 * heart) * smoothstep(0.12, 0.85, r2);
+    c *= mix(vec3(1.0), vec3(1.0, 0.8, 0.8), 0.6 * heart * smoothstep(0.1, 0.9, r2));
     c += (h(vUv * res) - 0.5) * grain;
     c = mix(c, vec3(1.0), flash);
     c *= 1.0 - fade;
@@ -99,7 +100,7 @@ const finalPass = fsPass(/* glsl */ `
   }`, {
   tMain: { value: mainRT.texture }, tStreak: { value: streakB.texture }, tPrev: { value: frameB.texture },
   exposure: { value: 1 }, streakAmt: { value: 0.16 }, vig: { value: 0.55 }, grain: { value: 0.02 }, ca: { value: 0.0018 }, glitch: { value: 0 },
-  freeze: { value: 0 }, rewind: { value: 0 }, trail: { value: 0 }, fade: { value: 0 }, flash: { value: 0 }, time: { value: 0 }, warm: { value: 0 },
+  freeze: { value: 0 }, rewind: { value: 0 }, trail: { value: 0 }, fade: { value: 0 }, flash: { value: 0 }, time: { value: 0 }, warm: { value: 0 }, heart: { value: 0 },
   res: { value: new THREE.Vector2(W, H) }, shock: { value: new THREE.Vector4(0.5, 0.5, 0, 0) }, lbox: { value: qs.get('nolb') || PORTRAIT ? 0.6 : 0.5 - BAR_PX / H },
 });
 const copyPass = fsPass('uniform sampler2D t; varying vec2 vUv; void main(){ gl_FragColor = vec4(texture2D(t, vUv).rgb, 1.0); }', { t: { value: null } });
@@ -152,8 +153,8 @@ const captions = [
   caption('熵增：时间只能向前', 21.3, 25.3, Y_SUB / PX, { size: SZ(46, 58) }),
   caption('除非——', 28.5, 30.3, Y_SUB / PX, { size: SZ(50, 66) }),
   caption('把 t 换成 −t', 30.5, 33.8, Y_SUB / PX, { size: SZ(50, 66) }),
-  caption('我找到了逆转时间的公式', 45.6, 48.15, Y_SUB / PX, { size: SZ(50, 58), stagger: 0.08 }),
-  caption('然后，回到了你身边', 48.3, 50.7, Y_SUB / PX, { size: SZ(50, 58), color: '#ffd9d2', glow: 'rgba(255,140,160,0.75)', stagger: 0.12 }),
+  caption('我找到了逆转时间的公式', 45.6, 48.7, Y_SUB / PX, { size: SZ(50, 58), stagger: 0.08 }),
+  caption('然后，回到了你身边', 49.1, 53.3, Y_SUB / PX, { size: SZ(50, 58), color: '#ffd9d2', glow: 'rgba(255,140,160,0.75)', stagger: 0.16 }),
 ];
 function updateCaptions(t, TR) {
   for (const cp of captions) {
@@ -201,11 +202,11 @@ function updateTimecode(t, tau, TR, zip) {
   g.fillStyle = 'rgba(255,200,150,0.9)';
   g.fillRect(70, 72, 420 * clamp(TR / END_REAL), 2);
   tcTex.needsUpdate = true;
-  tcMat.opacity = smooth(0.1, 0.6, TR) * (1 - smooth(END_REAL - 1.6, END_REAL - 0.6, TR)) * 0.8;
+  tcMat.opacity = smooth(0.1, 0.6, TR) * (1 - smooth(T.CRANE0, T.CRANE0 + 1.2, t)) * 0.8;   // leaves before the final image
 }
 
 // ---------------------------------------------------------------- scene content
-let river, clock, lovers, heroT, heroS, heroFlip, heroFinal, clockBasis, finalBasis;
+let river, clock, lovers, heroT, heroS, heroFlip, heroFinal, heroTitle, clockBasis, finalBasis, ring;
 
 async function setup() {
   const eq = await (await fetch('../build/equations.json')).json();
@@ -216,7 +217,7 @@ async function setup() {
   river = buildRiver(atlas, +(qs.get('glyphs') || SZ(12000, 10000)));
   river.set('uSize', SZ(1.0, 0.85));
   scene.add(river.group);
-  clock = buildClock(H);
+  clock = buildClock(PX);
   scene.add(clock.group);
   lovers = buildLovers();
   scene.add(lovers.group);
@@ -224,7 +225,10 @@ async function setup() {
   heroS = new WriteOn(eq.hero.entropy, 240, new THREE.Color(1.5, 1.0, 0.55), SZ(0.8, 0.72));
   heroFlip = new WriteOn(eq.hero.flip, 260, new THREE.Color(1.2, 1.35, 1.7), 0.9);
   heroFinal = new WriteOn(eq.hero.final, 300, new THREE.Color(1.5, 1.3, 1.0), SZ(0.74, 0.62));
-  for (const h of [heroT, heroS, heroFlip, heroFinal]) scene.add(h.mesh);
+  ring = ringAnchors();
+  // the title spans ~2/3 of the shadow's diameter (5.2 units at the hole)
+  heroTitle = new WriteOn(eq.hero.flip, 320, new THREE.Color(1.6, 1.35, 1.05), 0.66 * 5.2 * ring.scale * eq.hero.flip.vb[3] / eq.hero.flip.vb[2]);
+  for (const h of [heroT, heroS, heroFlip, heroFinal, heroTitle]) scene.add(h.mesh);
   // fixed orientations
   const camC = camByTau(19).pos;
   const fwd = camC.clone().sub(P.CLOCK).normalize();
@@ -236,7 +240,7 @@ async function setup() {
   const fr = new THREE.Vector3(0, 1, 0).cross(ff).normalize();
   const fu = ff.clone().cross(fr).normalize();
   finalBasis = { pos: P.MEET.clone().add(fu.clone().multiplyScalar(2.55)), right: fr, up: fu, fwd: ff, cam: fc };
-  await heroT.draw(0); await heroS.draw(0); await heroFlip.draw(1); await heroFinal.draw(0);
+  await heroT.draw(0); await heroS.draw(0); await heroFlip.draw(1); await heroFinal.draw(0); await heroTitle.draw(0);
   window.ready = true;
 }
 
@@ -277,6 +281,7 @@ async function renderFrame(tReal) {
   const tau = tauAt(t);
   const md = mode(t);
   const c = cameraAt(t);
+  if (window.__cam) Object.assign(c, window.__cam);   // inspection hook (tools only)
   camera.position.copy(c.pos);
   camera.lookAt(c.look);
   camera.fov = c.fov;
@@ -290,6 +295,11 @@ async function renderFrame(tReal) {
   bu.starGain.value = 0.35 + 0.65 * smooth(0.6, 3.0, tau);
   bu.glow.value = 0.35 + 0.6 * Math.exp(-Math.abs(t - T.MEET) * 1.2) * (t > T.MEET - 0.2 ? 1 : 0);
   if (t >= T.REW_END) { bu.diskGain.value = Math.max(bu.diskGain.value, smooth(42, 43.5, t)); bu.starGain.value = 1; }
+  // finale: the outer disk recedes so the ring reads cleanly; the photon ring lights up with the diamond
+  const crane = ease(clamp((t - T.CRANE0) / (T.CRANE1 - T.CRANE0)));
+  bu.diskOuter.value = lerp(15, 9.5, crane);
+  bu.glow.value += 0.55 * smooth(T.DIAMOND - 0.3, T.DIAMOND + 0.5, t) + 0.5 * Math.exp(-Math.abs(t - T.DIAMOND) * 3.5) * (t > T.DIAMOND - 0.1 ? 1 : 0);
+  if (window.__bh) for (const k in window.__bh) bu[k].value = window.__bh[k];
   bh.render(camera, tau);
   comp.mat.uniforms.near.value = camera.near;
   comp.mat.uniforms.far.value = camera.far;
@@ -297,13 +307,13 @@ async function renderFrame(tReal) {
   const beat = beatPulse(tau) * (tau > 6 ? 1 : 0.5);
   // equation river
   river.set('tau', tau);
-  river.set('uOpacity', Math.max(smooth(5.75, 6.35, tau) * (1 - 0.45 * smooth(16.8, 18.0, tau)), smooth(42, 43.2, t)));
+  river.set('uOpacity', Math.max(smooth(5.75, 6.35, tau) * (1 - 0.58 * smooth(16.6, 18.2, tau)), smooth(42, 43.2, t)));
   river.set('uConv', t > 42.4 ? (t - 42.4) * 0.9 : 0);
   river.set('uFlash', t > T.MEET ? Math.exp(-(t - T.MEET) * 2.5) : 0);
   river.set('uBeat', beat);
   river.set('uFormPos', finalBasis.pos); river.set('uFormRight', finalBasis.right); river.set('uFormUp', finalBasis.up);
   // clock
-  clock.update(tau, clockBasis, beat);
+  clock.update(tau, clockBasis, beat, camera.position);
   // lovers
   lovers.update(t, tauAt, camera);
 
@@ -346,11 +356,21 @@ async function renderFrame(tReal) {
   // hero: the final formula
   {
     const p = smooth(43.8, 46.6, t);
-    heroFinal.mesh.position.copy(finalBasis.pos);
+    // once the crane starts, the formula is released: it drifts up and fades into the dark
+    const rel = smooth(T.CRANE0 + 0.2, T.CRANE0 + 2.0, t);
+    heroFinal.mesh.position.copy(finalBasis.pos).add(finalBasis.up.clone().multiplyScalar(1.4 * rel));
     heroFinal.mesh.quaternion.copy(camera.quaternion);
-    heroFinal.mat.opacity = smooth(43.5, 44.0, t) * (1 + 0.6 * Math.exp(-Math.max(0, t - T.MEET) * 2) * (t > T.MEET ? 1 : 0));
-    heroFinal.mesh.visible = t > 43.5;
+    heroFinal.mat.opacity = smooth(43.5, 44.0, t) * (1 + 0.6 * Math.exp(-Math.max(0, t - T.MEET) * 2) * (t > T.MEET ? 1 : 0)) * (1 - rel);
+    heroFinal.mesh.visible = t > 43.5 && rel < 1;
     if (heroFinal.mesh.visible) await heroFinal.draw(p);
+  }
+  // hero: the title, hand-written inside the shadow (the opening began with a hand-written t)
+  {
+    heroTitle.mesh.position.copy(ring.title);
+    heroTitle.mesh.quaternion.copy(camera.quaternion);
+    heroTitle.mat.opacity = smooth(T.TITLE - 0.05, T.TITLE + 0.25, t);
+    heroTitle.mesh.visible = t > T.TITLE - 0.05;
+    if (heroTitle.mesh.visible) await heroTitle.draw(smooth(T.TITLE, T.TITLE + 1.15, t));
   }
 
   // ---- render
@@ -358,7 +378,8 @@ async function renderFrame(tReal) {
   renderer.setClearColor(0x000000, 1);
   renderer.clear();
   renderer.render(scene, camera);
-  bloom.strength = 0.55 + 0.12 * (t > T.MEET ? Math.exp(-(t - T.MEET) * 1.5) : 0) + 0.35 * (TR > T_R ? Math.exp(-(TR - T_R) * 2.5) : 0);
+  bloom.strength = 0.55 + 0.12 * (t > T.MEET ? Math.exp(-(t - T.MEET) * 1.5) : 0) + 0.35 * (TR > T_R ? Math.exp(-(TR - T_R) * 2.5) : 0)
+    + 0.2 * (t > T.DIAMOND ? Math.exp(-(t - T.DIAMOND) * 2.2) : 0);
   bloom.render(renderer, null, mainRT, 0, false);
   brightPass.run(brightRT);
   streakPass.mat.uniforms.t.value = brightRT.texture; streakPass.mat.uniforms.step.value = 2.0; streakPass.run(streakA);
@@ -374,13 +395,20 @@ async function renderFrame(tReal) {
   const rv = TR - T_R;
   f.flash.value = 0.22 * (rv >= 0 ? Math.exp(-rv * 7) : 0) + 0.85 * Math.exp(-Math.max(0, t - T.FREEZE) * 10) * (t >= T.FREEZE ? 1 : 0) + 0.05 * Math.exp(-Math.max(0, t - T.MEET) * 6) * (t >= T.MEET ? 1 : 0);
   const dip = Math.exp(-Math.pow((TR - HOOK_B) / 0.07, 2));
-  f.fade.value = Math.max(1 - smooth(0.0, 0.22, TR), smooth(END_REAL - 0.9, END_REAL - 0.05, TR), 0.92 * dip);
+  f.fade.value = Math.max(1 - smooth(0.0, 0.22, TR), smooth(T.FADE0, T.END - 0.1, t), 0.92 * dip);
   f.warm.value = smooth(42, 44, t) * 0.8;
   f.exposure.value = 1.0;
-  // shockwave at the reunion
-  const sp = P.MEET.clone().project(camera);
-  const dm = t - T.MEET;
-  f.shock.value.set(sp.x * 0.5 + 0.5, sp.y * 0.5 + 0.5, dm > 0 ? dm * 0.55 : 0, dm > 0 ? Math.exp(-dm * 1.6) : 0);
+  // the heartbeat in the frozen moment (same beats as the soundtrack)
+  f.heart.value = [[26.55, 1.0], [26.8, 0.7], [27.25, 1.0], [27.5, 0.7]].reduce((a, [tb, s]) => a + (t >= tb - 0.02 ? s * smooth(tb - 0.02, tb + 0.01, t) * Math.exp(-Math.max(0, t - tb) * 9) : 0), 0);
+  // shockwaves: the clock locking (by tau, so the rewind pulls it back in) and the reunion
+  const dm = t - T.MEET, dl = tau - 19.0;
+  if (dm > 0) {
+    const sp = P.MEET.clone().project(camera);
+    f.shock.value.set(sp.x * 0.5 + 0.5, sp.y * 0.5 + 0.5, dm * 0.55, Math.exp(-dm * 1.6));
+  } else if (dl > 0 && dl < 1.5) {
+    const sp = P.CLOCK.clone().project(camera);
+    f.shock.value.set(sp.x * 0.5 + 0.5, sp.y * 0.5 + 0.5, dl * 0.75, 0.55 * Math.exp(-dl * 3.2));
+  } else f.shock.value.set(0.5, 0.5, 0, 0);
   f.tPrev.value = readRT.texture;
   finalPass.run(writeRT);
   copyPass.mat.uniforms.t.value = writeRT.texture;
@@ -394,6 +422,7 @@ async function renderFrame(tReal) {
   return true;
 }
 window.renderFrame = renderFrame;
+window.__V3 = THREE.Vector3;
 window.readFrame = () => {
   const gl = renderer.getContext();
   const buf = new Uint8Array(W * H * 4);

@@ -17,6 +17,8 @@ uniform float diskGain;
 uniform float starGain;
 uniform float glow;
 uniform float holeGain;
+uniform float diskOuter;
+uniform vec2 res;
 varying vec2 vUv;
 
 float h21(vec2 p){ p = fract(p*vec2(123.34, 456.21)); p += dot(p, p+45.32); return fract(p.x*p.y); }
@@ -71,17 +73,24 @@ vec3 blackbody(float t){ // t in [0,1] cool->hot, art-directed amber palette
   return mix(c3, c4, (t-0.7)/0.3);
 }
 
+vec2 diskTex(float lr, float ang){
+  vec2 q = vec2(lr * 6.0, ang * 3.0 / 3.14159);
+  return vec2(fbm(vec2(q.x * 2.2, q.y * 0.9)), fbm(vec2(q.x * 9.0, ang * 1.5)));
+}
+
 vec4 disk(vec3 p, vec3 rayDir){
   float r = length(p.xz);
   if (r < ${BH.rIn.toFixed(2)} || r > ${BH.rOut.toFixed(2)}) return vec4(0.0);
   float phi = atan(p.z, p.x);
   float omega = 1.6 * pow(r, -1.5);
   float ang = phi + omega * tau * 6.0;
-  vec2 q = vec2(log(r) * 6.0, ang * 3.0 / 3.14159);
-  float n = fbm(vec2(q.x * 2.2, q.y * 0.9) + vec2(0.0, 0.0));
-  float streak = fbm(vec2(q.x * 9.0, ang * 1.5));
+  vec2 ns = diskTex(log(r), ang);
+  // atan wraps at phi = +-pi: blend with the neighbouring period so the texture has no seam
+  float ws = smoothstep(2.55, 3.14159, abs(phi)) * 0.5;
+  if (ws > 0.0) ns = mix(ns, diskTex(log(r), ang - sign(phi) * 6.28318), ws);
+  float n = ns.x, streak = ns.y;
   float dens = pow(smoothstep(0.15, 0.75, n), 1.6) * (0.25 + 1.2*pow(streak, 2.0));
-  float edge = smoothstep(${BH.rIn.toFixed(2)}, ${BH.rIn.toFixed(2)} + 0.5, r) * (1.0 - smoothstep(${(BH.rOut * 0.55).toFixed(2)}, ${BH.rOut.toFixed(2)}, r));
+  float edge = smoothstep(${BH.rIn.toFixed(2)}, ${BH.rIn.toFixed(2)} + 0.5, r) * (1.0 - smoothstep(diskOuter * 0.55, diskOuter, r));
   float temp = pow(${BH.rIn.toFixed(2)} / r, 0.9);
   // orbital motion -> doppler beaming
   vec3 vdir = normalize(vec3(-p.z, 0.0, p.x));
@@ -97,14 +106,11 @@ vec4 disk(vec3 p, vec3 rayDir){
   return vec4(col * edge, a);
 }
 
-void main(){
-  vec2 ndc = vUv * 2.0 - 1.0;
-  vec3 dir = normalize(camFwd + camRight * ndc.x * tanHalf * aspect + camUp * ndc.y * tanHalf);
+vec4 trace(vec3 dir){
   vec3 pos = camPos;
   vec3 vel = dir;
   vec3 h = cross(pos, vel);
   float h2 = dot(h, h);
-  vec3 acc = vec3(0.0);
   vec4 sum = vec4(0.0);
   float depth = 1e4;
   bool captured = false;
@@ -142,7 +148,31 @@ void main(){
   vec3 col = sum.rgb + (1.0 - sum.a) * bg + ring * vec3(1.0, 0.72, 0.42) * (captured ? 0.0 : 1.0);
   // before it is revealed the hole is invisible: plain, unlensed starfield
   if (holeGain < 0.999) { col = mix(sky(dir), col, holeGain); depth = mix(1e4, depth, step(0.5, holeGain)); }
-  gl_FragColor = vec4(col, depth);
+  return vec4(col, depth);
+}
+
+vec3 rayDir(vec2 ndc){ return normalize(camFwd + camRight * ndc.x * tanHalf * aspect + camUp * ndc.y * tanHalf); }
+
+void main(){
+  vec2 ndc = vUv * 2.0 - 1.0;
+  vec3 dir = rayDir(ndc);
+  // rays whose impact parameter is near the critical one (b = 3*sqrt(3)/2) form the shadow edge and
+  // the photon ring: the only hard edges in the image. Those pixels get 4 rotated-grid samples.
+  float b = length(cross(camPos, dir));
+  vec4 o;
+  if (abs(b - 2.598) < 0.32) {
+    vec2 px = 2.0 / res;
+    o = vec4(0.0, 0.0, 0.0, 1e9);
+    for (int k = 0; k < 4; k++) {
+      vec2 off = k == 0 ? vec2(0.125, 0.375) : k == 1 ? vec2(-0.375, 0.125) : k == 2 ? vec2(-0.125, -0.375) : vec2(0.375, -0.125);
+      vec4 s = trace(rayDir(ndc + off * px));
+      o.rgb += s.rgb * 0.25;
+      o.a = min(o.a, s.a);
+    }
+  } else {
+    o = trace(dir);
+  }
+  gl_FragColor = o;
 }
 `;
 
@@ -151,7 +181,7 @@ export function createBlackHole(renderer, w, h) {
   const mat = new THREE.ShaderMaterial({
     uniforms: {
       camPos: { value: new THREE.Vector3() }, camRight: { value: new THREE.Vector3() }, camUp: { value: new THREE.Vector3() }, camFwd: { value: new THREE.Vector3() },
-      tanHalf: { value: 0.4 }, aspect: { value: w / h }, tau: { value: 0 }, diskGain: { value: 1 }, starGain: { value: 1 }, glow: { value: 0.35 }, holeGain: { value: 1 },
+      tanHalf: { value: 0.4 }, aspect: { value: w / h }, tau: { value: 0 }, diskGain: { value: 1 }, starGain: { value: 1 }, glow: { value: 0.35 }, holeGain: { value: 1 }, diskOuter: { value: BH.rOut }, res: { value: new THREE.Vector2(w, h) },
     },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
     fragmentShader: frag,

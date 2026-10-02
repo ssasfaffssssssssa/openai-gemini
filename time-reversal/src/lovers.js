@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { P, T, clamp, lerp, smooth, ease, lensPoint, spiralIn } from './timeline.js';
+import { P, T, clamp, lerp, smooth, ease, lensPoint, spiralIn, ringAnchors } from './timeline.js';
 
 // "You" and "me": two lights in a binary orbit. "You" is pulled into the black hole
 // in act 3; the rewind brings it back; in the finale they merge in front of the photon ring.
@@ -55,8 +55,36 @@ export function loversAt(t, tau) {
     A = Cm.clone().add(bb.A.clone().sub(bb.C));
     B = Cm.clone().add(bb.B.clone().sub(bb.C));
     merge = smooth(T.MEET - 0.05, T.MEET + 0.05, t);
+    // the reunited light rises across the shadow and settles on the golden ring (the "diamond")
+    const k = ease(clamp((t - (T.CRANE0 + 0.25)) / (T.DIAMOND - T.CRANE0 - 0.25)));
+    if (k > 0) {
+      const an = ringAnchors();
+      const p = A.clone().lerp(an.diamond, k).add(an.right.clone().multiplyScalar(Math.sin(Math.PI * k) * 1.4));
+      A = p; B = p.clone();
+    }
   }
   return { A, B, merge };
+}
+
+// a four-point glint (with faint diagonals) for the diamond moment
+function starTex() {
+  const c = document.createElement('canvas'); c.width = c.height = 512;
+  const g = c.getContext('2d');
+  g.globalCompositeOperation = 'lighter';
+  const spike = (ang, len, wid, a) => {
+    g.save(); g.translate(256, 256); g.rotate(ang);
+    const gr = g.createLinearGradient(0, 0, len, 0);
+    gr.addColorStop(0, `rgba(255,255,255,${a})`); gr.addColorStop(0.35, `rgba(255,255,255,${a * 0.35})`); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr;
+    g.beginPath(); g.moveTo(0, -wid); g.lineTo(len, 0); g.lineTo(0, wid); g.closePath(); g.fill();
+    g.restore();
+  };
+  for (let k = 0; k < 4; k++) spike(k * Math.PI / 2, 250, 5, 1.0);
+  for (let k = 0; k < 4; k++) spike(Math.PI / 4 + k * Math.PI / 2, 120, 3, 0.45);
+  const gr = g.createRadialGradient(256, 256, 0, 256, 256, 70);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.2, 'rgba(255,255,255,0.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
+  return new THREE.CanvasTexture(c);
 }
 
 export function buildLovers() {
@@ -70,13 +98,16 @@ export function buildLovers() {
     return s;
   };
   const colA = new THREE.Color(1.0, 0.86, 0.62), colB = new THREE.Color(1.0, 0.5, 0.64);
-  const TRAIL = 30;
+  const TRAIL = 56;
   const lights = [colA, colB].map((col) => ({
     col,
     core: mk(col.clone().multiplyScalar(6), 0.2),
     halo: mk(col.clone().multiplyScalar(0.55), 1.0),
     trail: Array.from({ length: TRAIL }, () => mk(col.clone().multiplyScalar(2.5), 0.12)),
   }));
+  const star = new THREE.Sprite(new THREE.SpriteMaterial({ map: starTex(), color: new THREE.Color(1.0, 0.9, 0.8).multiplyScalar(2.6), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  star.visible = false;
+  group.add(star);
   // golden reunion wave
   const rings = [0, 1, 2].map((k) => {
     const m = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.0, 0.75, 0.4).multiplyScalar(2.2), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
@@ -92,6 +123,7 @@ export function buildLovers() {
       const now = loversAt(t, tau);
       const appear = smooth(3.1, 3.55, tau);
       const cam = camera.position;
+      const dmd = smooth(T.DIAMOND - 0.6, T.DIAMOND + 0.4, t);
       [now.A, now.B].forEach((p, i) => {
         const L = lights[i];
         const lp = lensPoint(p, cam);
@@ -102,18 +134,30 @@ export function buildLovers() {
         L.core.material.opacity = appear;
         L.halo.material.opacity = appear * 0.9;
         L.core.scale.setScalar(0.16 * pulse * mergeBoost);
-        L.halo.scale.setScalar(0.9 * pulse * mergeBoost);
+        L.halo.scale.setScalar(0.9 * pulse * mergeBoost * (1 - 0.45 * dmd));
         L.trail.forEach((s, k) => {
-          const tk = t - (k + 1) * 0.035;
+          const tk = t - (k + 1) * 0.019;
           const q = loversAt(tk, tauOf(tk));
           const lq = lensPoint(i ? q.B : q.A, cam);
           s.position.copy(lq.p);
           const f = 1 - k / L.trail.length;
-          s.material.opacity = appear * f * f * 0.55;
+          s.material.opacity = appear * f * f * 0.3;
           s.scale.setScalar(0.16 * f + 0.03);
           s.visible = lq.visible && appear > 0.001;
         });
       });
+      // the diamond glint on the ring
+      const dk = t - T.DIAMOND;
+      const sOn = smooth(T.DIAMOND - 0.35, T.DIAMOND + 0.05, t);
+      star.visible = sOn > 0.001;
+      if (star.visible) {
+        star.position.copy(lensPoint(now.A, cam).p);
+        const flare = dk > 0 ? 1 + 1.25 * Math.exp(-dk * 2.6) : sOn;
+        const tw = 0.9 + 0.1 * Math.sin(t * 4.7) * Math.sin(t * 2.3 + 1.0);
+        star.scale.setScalar(4.2 * flare * tw);
+        star.material.rotation = 0.05 * Math.sin(t * 0.9);
+        star.material.opacity = sOn * (0.75 + 0.25 * tw);
+      }
       // reunion rings face the camera
       rings.forEach(({ r, m, k }) => {
         const d = t - T.MEET - k * 0.22;
